@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import { ModalProvider } from "@/context/ModalContext";
 import "./globals.css";
 
@@ -55,6 +56,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="nl" className={jakarta.variable}>
       <body className="antialiased font-jakarta">
         <ModalProvider>{children}</ModalProvider>
+        <Analytics />
       </body>
     </html>
   );
