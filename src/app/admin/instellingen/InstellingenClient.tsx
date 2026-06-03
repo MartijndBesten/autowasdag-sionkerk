@@ -7,7 +7,7 @@ interface EventSettings { date: string; start_time: string; end_time: string; wa
 interface PriceSettings { buiten_wassen: number; binnen_zuigen: number; compleet: number; }
 
 export default function InstellingenClient({ initialSettings }: { initialSettings: Record<string, unknown> }) {
-  const ev0 = (initialSettings.event   as EventSettings) ?? { date:"2025-08-22", start_time:"09:00", end_time:"16:00", wash_bays:2, reservations_open:true, volunteers_open:true };
+  const ev0 = (initialSettings.event   as EventSettings) ?? { date:"", start_time:"09:00", end_time:"16:00", wash_bays:2, reservations_open:true, volunteers_open:true };
   const pr0 = (initialSettings.prices  as PriceSettings) ?? { buiten_wassen:5, binnen_zuigen:5, compleet:10 };
 
   const [event,  setEvent]  = useState<EventSettings>(ev0);

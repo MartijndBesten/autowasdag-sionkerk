@@ -35,7 +35,7 @@ const allOptions = categories.flatMap(c => c.options);
 const fieldCls = "w-full border border-stone-200 bg-white rounded-xl px-4 py-3 text-sm text-green-950 placeholder-gray-300 focus:outline-none focus:border-green-600 focus:ring-1 focus:ring-green-600 transition-colors";
 const labelCls = "block text-xs font-semibold text-green-700 uppercase tracking-wider mb-1.5";
 
-export default function HelpMeeClient() {
+export default function HelpMeeClient({ dateFormatted }: { dateFormatted: string }) {
   const [selected, setSelected] = useState<string[]>([]);
   const [form, setForm]         = useState({ name: "", email: "", phone: "", notes: "" });
   const [status, setStatus]     = useState<"idle" | "loading" | "success" | "error">("idle");
@@ -122,7 +122,7 @@ export default function HelpMeeClient() {
           een paar uur kunt of iets wilt meebrengen — elke bijdrage helpt.
         </p>
         <div className="mt-4 flex flex-wrap gap-x-5 gap-y-1.5 text-xs text-green-700/60">
-          <span>📅 Zaterdag 22 augustus</span>
+          <span>📅 {dateFormatted}</span>
           <span>🕗 09:00 – 17:00 (ook een dagdeel is prima)</span>
           <span>📍 Eikenhout 221, Houten</span>
         </div>

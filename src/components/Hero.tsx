@@ -1,6 +1,12 @@
 import Link from "next/link";
+import { formatEventDate, formatEventDateShort, getEventDay, getEventMonthName } from "@/lib/event";
 
-export default function Hero() {
+export default function Hero({ eventDate }: { eventDate: string }) {
+  const dayNum       = getEventDay(eventDate);
+  const monthName    = getEventMonthName(eventDate);
+  const dateFormatted = formatEventDate(eventDate);
+  const dateShort    = formatEventDateShort(eventDate);
+
   return (
     <section
       id="home"
@@ -31,10 +37,10 @@ export default function Hero() {
             {/* Decoratief datumgetal */}
             <div className="relative mb-1 select-none" aria-hidden="true">
               <span className="text-[8rem] sm:text-[10rem] font-extrabold leading-none text-green-100 tracking-tight">
-                22
+                {dayNum}
               </span>
               <span className="absolute top-1/2 left-3 -translate-y-1/2 text-green-400 font-bold text-xs uppercase tracking-[0.22em]">
-                augustus
+                {monthName}
               </span>
             </div>
 
@@ -56,7 +62,7 @@ export default function Hero() {
                 <svg className="w-4 h-4 text-green-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
-                Zaterdag 22 augustus
+                {dateFormatted}
               </p>
               <p className="flex items-center gap-2.5">
                 <svg className="w-4 h-4 text-green-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -104,7 +110,7 @@ export default function Hero() {
               <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-green-950/80 to-transparent" />
               <div className="absolute bottom-5 left-5 right-5">
                 <p className="text-green-300/70 text-xs mb-0.5">Jeugdclubs Sionkerk</p>
-                <p className="text-white text-lg font-bold leading-tight">Zaterdag 22 augustus</p>
+                <p className="text-white text-lg font-bold leading-tight">{dateFormatted}</p>
                 <p className="text-green-200/60 text-xs mt-0.5">09:00 – 16:00 · Eikenhout 221</p>
               </div>
             </div>
@@ -113,7 +119,7 @@ export default function Hero() {
             <div className="hidden sm:flex flex-col gap-3 w-24">
               <div className="flex-1 rounded-2xl bg-gold-100 p-4 flex flex-col justify-end">
                 <p className="text-green-700/60 text-[10px] mb-1 uppercase tracking-wide font-semibold">Datum</p>
-                <p className="text-green-950 font-bold text-sm leading-snug">Zat. 22 aug</p>
+                <p className="text-green-950 font-bold text-sm leading-snug">{dateShort}</p>
                 <p className="text-green-700/50 text-[10px] mt-1.5">09:00 – 16:00</p>
               </div>
               <div className="rounded-2xl bg-green-800 p-3.5">

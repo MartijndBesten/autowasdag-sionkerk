@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import type { PackageType } from "@/lib/supabase/types";
 import type { AvailableSlot } from "@/lib/timeslots";
+import { formatEventDate } from "@/lib/event";
 
 const PACKAGE_OPTIONS: { value: PackageType; label: string; duration: string }[] = [
   { value: "buiten_wassen", label: "Buiten wassen",      duration: "± 20 min" },
@@ -11,9 +12,7 @@ const PACKAGE_OPTIONS: { value: PackageType; label: string; duration: string }[]
   { value: "compleet",      label: "Compleet (buiten + binnen)", duration: "± 40 min" },
 ];
 
-const EVENT_DATE = "2025-08-22"; // wordt ingeladen uit settings als Supabase actief is
-
-export default function ReserverenPageForm() {
+export default function ReserverenPageForm({ eventDate }: { eventDate: string }) {
   const searchParams = useSearchParams();
   const router       = useRouter();
 
@@ -23,7 +22,7 @@ export default function ReserverenPageForm() {
     phone:            "",
     license_plate:    "",
     package_type:     (searchParams.get("pakket") as PackageType) ?? "compleet",
-    reservation_date: EVENT_DATE,
+    reservation_date: eventDate,
     reservation_time: "",
     extra_donation:   "",
     notes:            "",
@@ -95,7 +94,7 @@ export default function ReserverenPageForm() {
       <p className="text-gray-500 mb-2">Bedankt, <strong>{form.full_name}</strong>.</p>
       <p className="text-gray-400 text-sm max-w-sm mx-auto">
         U bent ingeschreven voor <strong>{PACKAGE_OPTIONS.find(p => p.value === form.package_type)?.label}</strong>{" "}
-        op <strong>{form.reservation_date}</strong> om <strong>{form.reservation_time}</strong> uur.
+        op <strong>{formatEventDate(form.reservation_date)}</strong> om <strong>{form.reservation_time}</strong> uur.
         We nemen contact op ter bevestiging.
       </p>
       <button onClick={() => router.push("/")} className="btn-primary mt-8">Terug naar de homepage</button>
@@ -129,7 +128,7 @@ export default function ReserverenPageForm() {
       <div>
         <label className={lbl}>Datum</label>
         <div className="border border-stone-200 rounded-xl px-4 py-3 bg-gray-50">
-          <p className="text-sm font-medium text-green-950">Zaterdag 22 augustus 2025</p>
+          <p className="text-sm font-medium text-green-950">{formatEventDate(eventDate)}</p>
           <p className="text-xs text-gray-400 mt-0.5">De Autowasdag vindt op één dag plaats</p>
         </div>
       </div>

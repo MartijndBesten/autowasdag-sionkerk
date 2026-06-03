@@ -1,6 +1,9 @@
 import Link from "next/link";
+import { formatEventDate } from "@/lib/event";
 
-export default function Footer() {
+export default function Footer({ eventDate }: { eventDate: string }) {
+  const dateFormatted = formatEventDate(eventDate);
+
   return (
     <footer id="contact" className="bg-green-950">
 
@@ -57,7 +60,7 @@ export default function Footer() {
               <div>
                 <p className="text-white font-semibold text-sm mb-4">Evenement</p>
                 <ul className="space-y-2.5 text-green-400/60 text-sm">
-                  <li>Zaterdag 22 augustus</li>
+                  <li>{dateFormatted}</li>
                   <li>09:00 – 16:00 uur</li>
                   <li>Reservering aanbevolen</li>
                   <li>Contante betaling</li>
@@ -95,7 +98,7 @@ export default function Footer() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 2C8 2 5 5.5 5 9.5c0 5 7 12.5 7 12.5s7-7.5 7-12.5C19 5.5 16 2 12 2z" />
               </svg>
             </div>
-            <span className="text-green-600 text-xs">© 2025 Autowasdag Sionkerk Houten</span>
+            <span className="text-green-600 text-xs">© {new Date().getFullYear()} Autowasdag Sionkerk Houten</span>
           </div>
           <p className="text-green-800 text-xs">Gemaakt met liefde door de gemeenteleden</p>
         </div>

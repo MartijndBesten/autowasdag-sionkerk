@@ -58,7 +58,7 @@ export default function ReservationForm() {
       <h3 className="font-bold text-green-950 text-lg mb-2">Aanmelding ontvangen!</h3>
       <p className="text-gray-500 text-sm leading-relaxed">
         Bedankt, {form.name}. We nemen contact op ter bevestiging.
-        Tot zaterdag 22 augustus!
+        Tot de Autowasdag!
       </p>
       <button onClick={closeModal} className="btn-primary mt-6">Sluiten</button>
     </div>

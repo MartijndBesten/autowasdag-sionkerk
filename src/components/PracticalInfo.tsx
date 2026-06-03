@@ -1,27 +1,29 @@
-const infoItems = [
-  {
-    label: "Datum",
-    value: "Zaterdag 22 augustus",
-    sub: "Jaarlijks terugkerend evenement",
-  },
-  {
-    label: "Openingstijden",
-    value: "09:00 – 16:00 uur",
-    sub: "Laatste auto om 15:45",
-  },
-  {
-    label: "Locatie",
-    value: "Sionkerk Houten",
-    sub: "Eikenhout 221 · 3991 PN Houten",
-  },
-  {
-    label: "Betaling",
-    value: "Contant ter plaatse",
-    sub: "Exact bedrag wordt gewaardeerd",
-  },
-];
+import { formatEventDate } from "@/lib/event";
 
-export default function PracticalInfo() {
+export default function PracticalInfo({ eventDate }: { eventDate: string }) {
+  const infoItems = [
+    {
+      label: "Datum",
+      value: formatEventDate(eventDate),
+      sub: "Jaarlijks terugkerend evenement",
+    },
+    {
+      label: "Openingstijden",
+      value: "09:00 – 16:00 uur",
+      sub: "Laatste auto om 15:45",
+    },
+    {
+      label: "Locatie",
+      value: "Sionkerk Houten",
+      sub: "Eikenhout 221 · 3991 PN Houten",
+    },
+    {
+      label: "Betaling",
+      value: "Contant ter plaatse",
+      sub: "Exact bedrag wordt gewaardeerd",
+    },
+  ];
+
   return (
     <section id="praktisch" className="bg-white section-padding">
       <div className="container-max">
