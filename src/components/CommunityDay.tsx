@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import Image from "next/image";
 import { useModal } from "@/context/ModalContext";
 import type { Action } from "@/lib/supabase/types";
@@ -52,11 +51,6 @@ const DESCRIPTIONS: Record<string, string> = {
 export default function CommunityDay({ action }: { action: Action | null }) {
   const { openModal } = useModal();
   const coffeeText = action?.coffee_text ?? DEFAULT_COFFEE;
-  const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
-
-  function onImageError(id: string) {
-    setImageErrors(prev => new Set([...prev, id]));
-  }
 
   return (
     <section id="op-de-dag" className="bg-white section-padding">
@@ -73,17 +67,14 @@ export default function CommunityDay({ action }: { action: Action | null }) {
           {activities.map(act => (
             <div key={act.id} className="flex flex-col rounded-2xl overflow-hidden border border-stone-100 shadow-[0_2px_12px_rgba(0,0,0,0.05)] hover:shadow-[0_4px_20px_rgba(0,0,0,0.08)] transition-shadow duration-200">
 
-              {/* Afbeeldingsvlak */}
+              {/* Afbeeldingsvlak — gekleurde achtergrond toont als fallback als foto ontbreekt */}
               <div className={`relative overflow-hidden ${act.bgFallback}`} style={{ height: 148 }}>
-                {!imageErrors.has(act.id) && (
-                  <Image
-                    src={act.imagePath}
-                    alt={act.title}
-                    fill
-                    className="object-cover"
-                    onError={() => onImageError(act.id)}
-                  />
-                )}
+                <Image
+                  src={act.imagePath}
+                  alt={act.title}
+                  fill
+                  className="object-cover"
+                />
               </div>
 
               {/* Tekst */}
