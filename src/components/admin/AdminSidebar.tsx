@@ -9,7 +9,7 @@ const nav = [
   { href: "/admin/reserveringen",label: "Reserveringen",icon: "🚗" },
   { href: "/admin/vrijwilligers",label: "Vrijwilligers",icon: "🙌" },
   { href: "/admin/bijdragen",    label: "Bijdragen",    icon: "🎂" },
-  { href: "/admin/acties",       label: "Acties",        icon: "📅" },
+  { href: "/admin/acties",       label: "Inhoud",        icon: "✏️" },
   { href: "/admin/instellingen", label: "Instellingen", icon: "⚙️" },
 ];
 

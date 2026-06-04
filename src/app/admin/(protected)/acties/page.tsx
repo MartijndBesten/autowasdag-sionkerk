@@ -6,9 +6,11 @@ export default async function ActiesPage() {
   const supabase = await createClient();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data } = await (supabase as any)
-    .from("actions")
-    .select("*")
-    .order("created_at", { ascending: false });
+    .from("instellingen")
+    .select("value")
+    .eq("key", "sitecontent")
+    .single();
 
-  return <ActiesClient initialActions={(data ?? []) as Action[]} />;
+  const content = (data?.value as Action) ?? null;
+  return <ActiesClient initialContent={content} />;
 }
