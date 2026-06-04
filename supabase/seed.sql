@@ -5,7 +5,7 @@ insert into public.settings (key, value) values
 (
   'event',
   '{
-    "date": "2025-08-22",
+    "date": "2026-07-11",
     "start_time": "09:00",
     "end_time": "16:00",
     "wash_bays": 2,
