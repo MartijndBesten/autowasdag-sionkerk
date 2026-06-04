@@ -103,12 +103,14 @@ export default function HelpMeeClient({ dateFormatted }: { dateFormatted: string
       <div className="max-w-md mx-auto px-4 pt-28 pb-20 text-center">
         <div className="text-5xl mb-5">🙌</div>
         <h1 className="text-3xl font-bold text-green-950 mb-3">Dankjewel, {form.name}!</h1>
-        <p className="text-green-800/60 text-lg leading-relaxed mb-4">We zijn blij dat je meedoet.</p>
+        <p className="text-green-800/70 text-base leading-relaxed mb-4">
+          We hebben je aanmelding en voorkeuren ontvangen. De organisatie maakt later de definitieve indeling en laat je weten waar je wordt ingepland.
+        </p>
 
         <div className="bg-white rounded-2xl p-4 shadow-sm border border-stone-100 text-left mb-4 space-y-3">
           {chosenLabels.length > 0 && (
             <div>
-              <p className="text-xs font-semibold text-green-600 uppercase tracking-wider mb-1.5">Jouw bijdrage</p>
+              <p className="text-xs font-semibold text-green-600 uppercase tracking-wider mb-1.5">Jouw opgegeven voorkeuren</p>
               <ul className="space-y-1">
                 {chosenLabels.map(l => <li key={l} className="text-sm text-green-900">{l}</li>)}
               </ul>
@@ -116,7 +118,7 @@ export default function HelpMeeClient({ dateFormatted }: { dateFormatted: string
           )}
           {contribDetails && (
             <div>
-              <p className="text-xs font-semibold text-green-600 uppercase tracking-wider mb-1.5">Details</p>
+              <p className="text-xs font-semibold text-green-600 uppercase tracking-wider mb-1.5">Extra informatie</p>
               {contribDetails.split("\n").map((line, i) => (
                 <p key={i} className="text-sm text-gray-600">{line}</p>
               ))}
@@ -126,13 +128,19 @@ export default function HelpMeeClient({ dateFormatted }: { dateFormatted: string
             <p className="text-xs font-semibold text-green-600 uppercase tracking-wider mb-1">Beschikbaarheid</p>
             <p className="text-sm text-gray-600">{availLabel}</p>
           </div>
+          {form.notes && (
+            <div>
+              <p className="text-xs font-semibold text-green-600 uppercase tracking-wider mb-1">Opmerking</p>
+              <p className="text-sm text-gray-600">{form.notes}</p>
+            </div>
+          )}
         </div>
 
         <p className="text-gray-400 text-sm leading-relaxed mb-2">
           Er is een bevestiging verstuurd naar <strong>{form.email}</strong>.
         </p>
         <p className="text-gray-400 text-sm leading-relaxed mb-8">
-          We nemen zo nodig contact op met meer informatie over de dag.
+          Je ontvangt nog bericht waar en wanneer je precies wordt ingepland.
         </p>
         <Link href="/" className="btn-primary inline-flex">Terug naar de homepage</Link>
       </div>
@@ -161,6 +169,9 @@ export default function HelpMeeClient({ dateFormatted }: { dateFormatted: string
         <p className="mt-4 text-green-800/60 text-base leading-relaxed">
           De Autowasdag draait op vrijwilligers van de Sionkerk. Of je nu
           een paar uur kunt of iets wilt meebrengen — elke bijdrage helpt.
+        </p>
+        <p className="mt-3 text-sm text-green-700/70 leading-relaxed bg-green-50 border border-green-100 rounded-xl px-4 py-3">
+          Kies één of meer dingen waarmee je zou willen helpen. Wij maken daarna een indeling en laten je weten waar je uiteindelijk wordt ingepland.
         </p>
         <div className="mt-4 flex flex-wrap gap-x-5 gap-y-1.5 text-xs text-green-700/60">
           <span>📅 {dateFormatted}</span>
@@ -201,7 +212,7 @@ export default function HelpMeeClient({ dateFormatted }: { dateFormatted: string
 
         {selected.length > 0 && (
           <p className="text-xs text-green-600 font-medium -mt-4">
-            ✓ {selected.map(id => allOptions.find(o => o.id === id)?.title).join(" · ")}
+            ✓ Opgegeven voorkeuren: {selected.map(id => allOptions.find(o => o.id === id)?.title).join(" · ")}
           </p>
         )}
 

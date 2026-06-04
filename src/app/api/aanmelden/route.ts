@@ -28,6 +28,7 @@ export async function POST(req: NextRequest) {
         contribution_details: contribution_details || null,
         notes:                notes || null,
         status:               "confirmed",
+        planning_status:      "new",
       })
       .select("id")
       .single();

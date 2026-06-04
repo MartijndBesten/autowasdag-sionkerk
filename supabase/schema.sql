@@ -381,3 +381,32 @@ create index if not exists idx_volunteer_status
 
 create index if not exists idx_contribution_type
   on public.contribution_signups (contribution_type);
+
+-- ── Vrijwilligersplanning: idempotente uitbreiding ────────────
+
+alter table public.volunteer_signups
+  add column if not exists final_tasks              text[]      not null default '{}'::text[],
+  add column if not exists final_shift              text        not null default 'not_chosen',
+  add column if not exists final_start_time         time,
+  add column if not exists final_end_time           time,
+  add column if not exists internal_note            text,
+  add column if not exists planning_status          text        not null default 'new',
+  add column if not exists assignment_email_sent    boolean     not null default false,
+  add column if not exists assignment_email_sent_at timestamptz;
+
+do $$ begin
+  if not exists (select 1 from pg_constraint where conname = 'chk_volunteer_planning_status') then
+    alter table public.volunteer_signups add constraint chk_volunteer_planning_status
+      check (planning_status in ('new','review','planned','assignment_sent','cancelled','reserve','not_needed'));
+  end if;
+end $$;
+
+do $$ begin
+  if not exists (select 1 from pg_constraint where conname = 'chk_volunteer_final_shift') then
+    alter table public.volunteer_signups add constraint chk_volunteer_final_shift
+      check (final_shift in ('not_chosen','morning','afternoon','full_day','specific'));
+  end if;
+end $$;
+
+create index if not exists idx_volunteer_planning_status
+  on public.volunteer_signups (planning_status);

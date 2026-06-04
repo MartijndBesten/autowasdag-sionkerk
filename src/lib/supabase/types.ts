@@ -1,5 +1,4 @@
 // Supabase database type definitions
-// Gegenereerd op basis van schema.sql
 
 export type PackageType   = "buiten_wassen" | "binnen_zuigen" | "compleet";
 export type ReservationStatus = "pending" | "confirmed" | "completed" | "cancelled";
@@ -7,6 +6,8 @@ export type PaymentStatus = "unpaid" | "paid_cash" | "paid_qr" | "donated_extra"
 export type VolunteerStatus  = "pending" | "confirmed" | "cancelled";
 export type ContributionType = "bakken" | "sponsoring" | "spullen" | "eten_verkopen" | "overig";
 export type AvailabilityType = "full_day" | "morning" | "afternoon";
+export type PlanningStatus   = "new" | "review" | "planned" | "assignment_sent" | "cancelled" | "reserve" | "not_needed";
+export type FinalShift       = "not_chosen" | "morning" | "afternoon" | "full_day" | "specific";
 
 export interface CarReservation {
   id: string;
@@ -46,6 +47,15 @@ export interface VolunteerSignup {
   notes: string | null;
   admin_notes: string | null;
   status: VolunteerStatus;
+  // Planningsvelden (door organisatie in te vullen)
+  final_tasks: string[];
+  final_shift: FinalShift;
+  final_start_time: string | null;
+  final_end_time: string | null;
+  internal_note: string | null;
+  planning_status: PlanningStatus;
+  assignment_email_sent: boolean;
+  assignment_email_sent_at: string | null;
 }
 
 export interface ContributionSignup {
