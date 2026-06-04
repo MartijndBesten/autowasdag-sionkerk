@@ -65,16 +65,11 @@ export default function AboutSection() {
               ))}
             </div>
 
-            <div className="mt-4 grid grid-cols-3 gap-2.5">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="aspect-[4/3] rounded-xl bg-green-900/50 border border-green-800/30 flex items-center justify-center">
-                  <svg className="w-5 h-5 text-green-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
-                </div>
+            <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="aspect-square rounded-xl bg-green-900/50 border border-green-800/30" />
               ))}
             </div>
-            <p className="text-green-700/50 text-xs text-center">foto&apos;s van de vrijwilligers komen hier</p>
           </div>
         </div>
       </div>
