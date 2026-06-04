@@ -7,7 +7,7 @@ import type { AvailableSlot } from "@/lib/timeslots";
 import { formatEventDate } from "@/lib/event";
 
 const PACKAGE_OPTIONS: { value: PackageType; label: string; duration: string; price: string }[] = [
-  { value: "buiten_wassen", label: "Buiten wassen",             duration: "± 20 min", price: "€7,50" },
+  { value: "buiten_wassen", label: "Buitenkant wassen",          duration: "± 20 min", price: "€7,50" },
   { value: "compleet",      label: "Compleet (buiten + binnen)", duration: "± 40 min", price: "€12,50" },
 ];
 

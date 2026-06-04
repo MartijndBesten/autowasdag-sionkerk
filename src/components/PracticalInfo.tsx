@@ -9,7 +9,7 @@ function buildDefaultItems(action: Action | null) {
     { label: "Datum",         value: date || "Datum volgt",            sub: "Jaarlijks terugkerend evenement" },
     { label: "Openingstijden",value: `${start} – ${end} uur`,          sub: `Laatste auto om ${end === "16:00" ? "15:45" : end}` },
     { label: "Locatie",       value: action?.location_address ? `${action.location_address}, ${action.location_city}` : "Eikenhout 221, Houten", sub: action ? `${action.location_postal} Houten` : "3991 PN Houten" },
-    { label: "Betaling",      value: "Contant ter plaatse",             sub: "Exact bedrag wordt gewaardeerd" },
+    { label: "Betaling",      value: "U kunt op de dag zelf contant betalen of via Tikkie." },
   ];
 }
 
@@ -59,9 +59,9 @@ export default function PracticalInfo({ action }: { action: Action | null }) {
             </div>
 
             <div className="rounded-2xl bg-[#f8f6f1] px-6 py-5 border border-stone-100">
-              <p className="text-green-800 font-semibold text-base mb-1">Kom gewoon langs</p>
+              <p className="text-green-800 font-semibold text-base mb-1">Kom gerust langs</p>
               <p className="text-gray-400 text-sm leading-relaxed">
-                Reserveren is handig, maar niet verplicht. Rij op, kies je pakket en laat je auto wassen door onze gemeenteleden.
+                Reserveren is handig, dan bent u zeker van een plek. Zonder reservering langskomen kan ook, zolang er nog ruimte is. Bij drukte kan het iets uitlopen.
               </p>
             </div>
           </div>

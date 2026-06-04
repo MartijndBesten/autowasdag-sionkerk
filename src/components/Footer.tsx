@@ -21,7 +21,7 @@ export default function Footer({ action }: { action: Action | null }) {
               <span className="label-small text-green-500">Vragen?</span>
               <h2 className="mt-3 text-3xl sm:text-4xl font-bold text-white leading-snug">We horen graag<br />van je</h2>
               <p className="mt-5 text-green-100/50 text-lg leading-relaxed max-w-sm">
-                Vragen over de dag, een pakket of als vrijwilliger meehelpen? Stuur een berichtje.
+                Vragen over de autowasdag of wilt u meehelpen? Stuur gerust een bericht.
               </p>
               <div className="mt-8 space-y-5">
                 <a href={`mailto:${email}`} className="group flex items-start gap-4">
@@ -50,7 +50,7 @@ export default function Footer({ action }: { action: Action | null }) {
               <div>
                 <p className="text-white font-semibold text-sm mb-4">Wasbeurten</p>
                 <ul className="space-y-2.5">
-                  {[`Buiten wassen — €${bw}`, `Compleet — €${cmp}`].map(t => (
+                  {[`Buitenkant wassen — €${bw}`, `Compleet — €${cmp}`].map(t => (
                     <li key={t}><a href="#pakketten" className="text-green-400/60 text-sm hover:text-green-300 transition-colors">{t}</a></li>
                   ))}
                 </ul>
@@ -61,7 +61,7 @@ export default function Footer({ action }: { action: Action | null }) {
                   {dateFormatted && <li>{dateFormatted}</li>}
                   <li>{(action?.start_time ?? "09:00").slice(0,5)} – {(action?.end_time ?? "16:00").slice(0,5)} uur</li>
                   <li>Reservering aanbevolen</li>
-                  <li>Contante betaling</li>
+                  <li>Contant of via Tikkie</li>
                 </ul>
               </div>
               <div>
@@ -75,7 +75,7 @@ export default function Footer({ action }: { action: Action | null }) {
               <div>
                 <p className="text-white font-semibold text-sm mb-4">Op de dag</p>
                 <ul className="space-y-2.5 text-green-400/60 text-sm">
-                  <li>Koffie & gebak</li><li>Friet & snacks</li><li>Kinderhoek</li><li>Springkussen</li>
+                  <li>Koffie & gebak</li><li>Friet & snacks</li><li>Fruit & bloemen</li><li>Kinderhoek</li><li>Springkussen</li>
                 </ul>
               </div>
             </div>

@@ -82,7 +82,7 @@ export default function Hero({ action }: { action: Action | null }) {
             </div>
 
             <div className="mt-10 flex flex-wrap items-center gap-4">
-              <Link href="/reserveren" className="btn-primary">Reserveer je wasbeurt</Link>
+              <Link href="/reserveren" className="btn-primary">Reserveer uw wasbeurt</Link>
               <a href="#help-mee" className="inline-flex items-center gap-2 border-2 border-green-700 text-green-700 px-6 py-3.5 rounded-full text-sm font-semibold hover:bg-green-700 hover:text-white transition-colors">
                 Help mee als vrijwilliger
               </a>

@@ -24,8 +24,8 @@ const DEFAULT_CONTENT: Action = {
   coffee_text: "Laat uw reservering zien en ontvang een gratis bakje koffie. Gebak en andere lekkernijen zijn verkrijgbaar tijdens de actiedag.",
   timeline: [], faq: [], practical_info: [],
   package_descriptions: {
-    buiten_wassen: { name: "Buiten wassen", tagline: "Alleen buitenkant", description: "Een grondige handwas van de buitenkant van je auto. Gespoten, gezeemd en afgedroogd.", includes: ["Exterieur handwas", "Spoelen & afdrogen", "Ramen wassen"] },
-    compleet:      { name: "Compleet", tagline: "Buiten + binnen", description: "Buitenkant wassen, interieur stofzuigen en een eenvoudige interieurreiniging. Van buiten én van binnen fris.", includes: ["Exterieur handwas (buitenkant)", "Stofzuigen interieur", "Eenvoudige interieurreiniging"] },
+    buiten_wassen: { name: "Buitenkant wassen", tagline: "Alleen buitenkant", description: "We wassen de buitenkant van de auto.", includes: ["Buitenkant wassen", "Met zorg door de jongeren", "Opbrengst voor de zalen"] },
+    compleet:      { name: "Compleet", tagline: "Buiten + binnen", description: "We wassen de buitenkant, stofzuigen de binnenkant en doen een eenvoudige interieurreiniging.", includes: ["Buitenkant wassen", "Binnenkant stofzuigen", "Eenvoudige interieurreiniging"] },
   },
   footer_email: "autowasdag@sionkerkhouten.nl", footer_website: "https://www.hervormdhouten.nl", footer_tagline: null,
 };

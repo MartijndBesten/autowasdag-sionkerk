@@ -31,20 +31,20 @@ values (
     'practical_info',       '[]'::jsonb,
     'package_descriptions', jsonb_build_object(
       'buiten_wassen', jsonb_build_object(
-        'name',        'Buiten wassen',
+        'name',        'Buitenkant wassen',
         'tagline',     'Alleen buitenkant',
-        'description', 'Een grondige handwas van de buitenkant van je auto. Gespoten, gezeemd en afgedroogd.',
-        'includes',    '["Exterieur handwas","Spoelen & afdrogen","Ramen wassen"]'::jsonb
+        'description', 'We wassen de buitenkant van de auto.',
+        'includes',    '["Buitenkant wassen","Met zorg door de jongeren","Opbrengst voor de zalen"]'::jsonb
       ),
       'compleet', jsonb_build_object(
         'name',        'Compleet',
         'tagline',     'Buiten + binnen',
-        'description', 'Buitenkant wassen, interieur stofzuigen en een eenvoudige interieurreiniging. Van buiten én van binnen fris.',
-        'includes',    '["Exterieur handwas (buitenkant)","Stofzuigen interieur","Eenvoudige interieurreiniging"]'::jsonb
+        'description', 'We wassen de buitenkant, stofzuigen de binnenkant en doen een eenvoudige interieurreiniging.',
+        'includes',    '["Buitenkant wassen","Binnenkant stofzuigen","Eenvoudige interieurreiniging"]'::jsonb
       )
     ),
     'footer_email',         'autowasdag@sionkerkhouten.nl',
-    'footer_website',       'https://www.sionkerkhouten.nl',
+    'footer_website',       'https://www.hervormdhouten.nl',
     'footer_tagline',       null,
     'notify_email',         null,
     'internal_notes',       null

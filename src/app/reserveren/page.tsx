@@ -34,11 +34,11 @@ export default async function ReserverenPage() {
         <div className="mb-10">
           <span className="label-small">Autowasdag · {dateFormatted}</span>
           <h1 className="mt-3 text-3xl sm:text-4xl font-bold text-green-950">
-            Reserveer je wasbeurt
+            Reserveer uw wasbeurt
           </h1>
           <p className="mt-4 text-gray-500 text-lg leading-relaxed">
-            Vul je gegevens in en kies je pakket. Reserveren is handig, dan ben
-            je zeker van een plek. Langskomen zonder reservering kan ook — zolang
+            Vul uw gegevens in en kies uw pakket. Reserveren is handig, dan bent
+            u zeker van een plek. Langskomen zonder reservering kan ook — zolang
             er plek is.
           </p>
 

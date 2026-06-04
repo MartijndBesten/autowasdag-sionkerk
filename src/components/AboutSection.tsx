@@ -1,7 +1,7 @@
 const values = [
   {
     title: "Door de jeugd",
-    text: "De Autowasdag is een initiatief van de jeugdclubs van de Sionkerk. Enthousiaste jongeren wassen je auto met plezier.",
+    text: "De Autowasdag is een initiatief van de jeugdclubs van de Sionkerk. Enthousiaste jongeren wassen uw auto met plezier.",
   },
   {
     title: "Voor de zalen",
@@ -28,7 +28,7 @@ export default function AboutSection() {
 
             <p className="mt-7 text-[1.05rem] text-green-100/60 leading-[1.8]">
               De Autowasdag is een initiatief van de jeugdclubs van de Sionkerk
-              in Houten. Met z&apos;n allen stropen we de mouwen op, wassen je
+              in Houten. Met z&apos;n allen stropen we de mouwen op, wassen uw
               auto en zorgen voor een gezellige dag voor iedereen.
             </p>
             <p className="mt-4 text-[1.05rem] text-green-100/60 leading-[1.8]">
