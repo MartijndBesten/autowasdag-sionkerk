@@ -40,7 +40,7 @@ values (
         'name',        'Compleet',
         'tagline',     'Buiten + binnen',
         'description', 'Buitenkant wassen, interieur stofzuigen en een eenvoudige interieurreiniging. Van buiten én van binnen fris.',
-        'includes',    '["Buitenwas (zoals Buiten wassen)","Stofzuigen interieur","Eenvoudige interieurreiniging"]'::jsonb
+        'includes',    '["Exterieur handwas (buitenkant)","Stofzuigen interieur","Eenvoudige interieurreiniging"]'::jsonb
       )
     ),
     'footer_email',         'autowasdag@sionkerkhouten.nl',

@@ -13,7 +13,7 @@ const DEFAULT_PACKAGES = [
   {
     id: "compleet", name: "Compleet", tagline: "Buiten + binnen",
     description: "Buitenkant wassen, interieur stofzuigen en een eenvoudige interieurreiniging. Van buiten én van binnen fris.",
-    includes: ["Buitenwas (zoals Buiten wassen)", "Stofzuigen interieur", "Eenvoudige interieurreiniging"],
+    includes: ["Exterieur handwas (buitenkant)", "Stofzuigen interieur", "Eenvoudige interieurreiniging"],
     variant: "featured" as const,
   },
 ];
