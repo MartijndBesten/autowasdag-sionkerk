@@ -7,9 +7,9 @@ const activities = [
     id: "koffie",
     title: "Koffie & gebak",
     description:
-      "Zit gezellig bij een kop koffie of thee terwijl je auto wordt gewassen. Vers gebak van de gemeenteleden — opbrengst gaat naar de zalen.",
-    tag: "Tegen betaling",
-    tagColor: "text-amber-700 bg-amber-50 border-amber-200",
+      "Zit gezellig bij een kop koffie of thee terwijl je auto wordt gewassen. Gratis koffie, thee en vers gebak — inbegrepen bij elke wasbeurt.",
+    tag: "Inbegrepen",
+    tagColor: "text-green-700 bg-green-50 border-green-200",
     bgPlaceholder: "bg-amber-50",
     iconColor: "text-amber-400",
     icon: (
