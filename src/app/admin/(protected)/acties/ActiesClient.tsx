@@ -54,7 +54,7 @@ export default function ActiesClient({ initialContent }: { initialContent: Actio
     setSaving(true); setMsg(null);
     try {
       // Sla volledige sitecontent op in instellingen (sleutel: sitecontent)
-      const { error } = await db.from("instellingen").upsert(
+      const { error } = await db.from("settings").upsert(
         { key: "sitecontent", value: content },
         { onConflict: "key" }
       );

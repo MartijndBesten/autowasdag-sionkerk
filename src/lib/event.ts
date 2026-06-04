@@ -9,7 +9,7 @@ export async function getActiveAction(): Promise<Action | null> {
   try {
     const supabase = createAdminClient() as any;
     const { data } = await supabase
-      .from("instellingen")
+      .from("settings")
       .select("value")
       .eq("key", "sitecontent")
       .single();

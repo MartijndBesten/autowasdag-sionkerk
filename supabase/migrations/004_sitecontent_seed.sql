@@ -1,8 +1,8 @@
--- ── Sitecontent-sleutel in public.instellingen ───────────────────────────────
+-- ── Sitecontent-sleutel in public.settings ───────────────────────────────────
 -- Gebruikt INSERT ... ON CONFLICT DO UPDATE zodat dit ook werkt als de sleutel
--- al bestaat. Bestaande andere sleutels in instellingen worden NIET gewijzigd.
+-- al bestaat. Bestaande andere sleutels in settings worden NIET gewijzigd.
 
-insert into public.instellingen (key, value)
+insert into public.settings (key, value)
 values (
   'sitecontent',
   jsonb_build_object(
@@ -54,4 +54,4 @@ on conflict (key) do update
   set value = excluded.value;
 
 -- Rollback:
--- delete from public.instellingen where key = 'sitecontent';
+-- delete from public.settings where key = 'sitecontent';

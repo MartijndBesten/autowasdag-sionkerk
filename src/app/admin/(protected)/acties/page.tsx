@@ -6,7 +6,7 @@ export default async function ActiesPage() {
   const supabase = await createClient();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data } = await (supabase as any)
-    .from("instellingen")
+    .from("settings")
     .select("value")
     .eq("key", "sitecontent")
     .single();
