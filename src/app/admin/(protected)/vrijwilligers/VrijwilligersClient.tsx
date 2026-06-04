@@ -608,6 +608,14 @@ export default function VrijwilligersClient({ initialRows }: { initialRows: Volu
                 {editVolunteer.contribution_details && (
                   <p className="text-xs text-gray-500">{editVolunteer.contribution_details}</p>
                 )}
+                {editVolunteer.cost_preference && (
+                  <p className="text-xs">
+                    <span className="font-semibold text-green-700">Kosten bakken: </span>
+                    <span className={`font-medium ${editVolunteer.cost_preference === "vergoeding_gewenst" ? "text-amber-700" : "text-gray-600"}`}>
+                      {COST_LABELS[editVolunteer.cost_preference] ?? editVolunteer.cost_preference}
+                    </span>
+                  </p>
+                )}
                 {editVolunteer.notes && (
                   <p className="text-xs text-gray-400 italic">{editVolunteer.notes}</p>
                 )}

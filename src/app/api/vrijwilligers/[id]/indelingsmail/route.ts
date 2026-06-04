@@ -49,6 +49,7 @@ export async function POST(
       final_start_time:     row.final_start_time,
       final_end_time:       row.final_end_time,
       contribution_details: row.contribution_details,
+      cost_preference:      row.cost_preference,
     });
 
     if (!result.ok) {

@@ -291,6 +291,7 @@ export async function sendAssignmentEmail(data: {
   final_start_time: string | null;
   final_end_time: string | null;
   contribution_details: string | null;
+  cost_preference: string | null;
 }): Promise<SendResult> {
   const taskLabel = data.final_tasks.map(t => TASK_LABELS[t] ?? t).join(", ") || "—";
 
@@ -313,6 +314,9 @@ export async function sendAssignmentEmail(data: {
   if (bakkenDetail) {
     rows.push(["", "We hebben genoteerd dat je het volgende meeneemt:"]);
     rows.push(["Wat wordt gebakken", bakkenDetail]);
+    if (data.cost_preference) {
+      rows.push(["Kosten ingrediënten", COST_LABELS[data.cost_preference] ?? data.cost_preference]);
+    }
   }
   if (spullenDetail) {
     rows.push(["", "We hebben genoteerd dat je de volgende spullen meeneemt:"]);
