@@ -1,7 +1,7 @@
 const values = [
   {
     title: "Door de jeugd",
-    text: "De Autowasdag is een initiatief van de jeugdclubs van de Sionkerk. Enthousiaste jongeren wassen uw auto met plezier.",
+    text: "De Autowasdag is een initiatief van de jeugdclubs van de Sionkerk. Enthousiaste jongeren wassen je auto met plezier.",
   },
   {
     title: "Voor de zalen",
@@ -28,7 +28,7 @@ export default function AboutSection() {
 
             <p className="mt-7 text-[1.05rem] text-green-100/60 leading-[1.8]">
               De Autowasdag is een initiatief van de jeugdclubs van de Sionkerk
-              in Houten. Met z&apos;n allen stropen we de mouwen op, wassen uw
+              in Houten. Met z&apos;n allen stropen we de mouwen op, wassen je
               auto en zorgen voor een gezellige dag voor iedereen.
             </p>
             <p className="mt-4 text-[1.05rem] text-green-100/60 leading-[1.8]">
@@ -40,14 +40,15 @@ export default function AboutSection() {
             <div className="mt-10 py-6 border-t border-green-900">
               <p className="label-small text-green-500 mb-3">Over de Sionkerk</p>
               <p className="text-green-100/50 text-sm leading-relaxed max-w-sm">
-                De Sionkerk is een protestantse gemeente in Houten, actief in
-                de buurt met diensten, jeugdwerk en activiteiten voor jong en oud.
+                De Sionkerk is onderdeel van de Hervormde Gemeente Houten. Elke zondag
+                zijn er kerkdiensten om 09:30 en 18:30 uur. Daarnaast zijn er activiteiten
+                voor kinderen, jongeren en volwassenen.
               </p>
               <a
-                href="https://www.sionkerkhouten.nl"
+                href="https://www.hervormdhouten.nl"
                 className="inline-flex items-center gap-1.5 mt-4 text-green-400 text-sm hover:text-green-300 transition-colors"
               >
-                sionkerkhouten.nl
+                hervormdhouten.nl
                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                 </svg>

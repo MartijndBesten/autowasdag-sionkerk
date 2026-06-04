@@ -5,7 +5,7 @@ import { formatEventDate } from "@/lib/event";
 export default function Footer({ action }: { action: Action | null }) {
   const dateFormatted = action?.event_date ? formatEventDate(action.event_date) : "";
   const email   = action?.footer_email   ?? "autowasdag@sionkerkhouten.nl";
-  const website = action?.footer_website ?? "https://www.sionkerkhouten.nl";
+  const website = action?.footer_website ?? "https://www.hervormdhouten.nl";
   const bw  = Number(action?.price_buiten_wassen ?? 7.50).toFixed(2).replace(".", ",");
   const cmp = Number(action?.price_compleet      ?? 12.50).toFixed(2).replace(".", ",");
   const address = action?.location_address ?? "Eikenhout 221";
@@ -67,7 +67,7 @@ export default function Footer({ action }: { action: Action | null }) {
               <div>
                 <p className="text-white font-semibold text-sm mb-4">Sionkerk</p>
                 <ul className="space-y-2.5">
-                  <li><a href={website} className="text-green-400/60 text-sm hover:text-green-300 transition-colors">sionkerkhouten.nl</a></li>
+                  <li><a href={website} className="text-green-400/60 text-sm hover:text-green-300 transition-colors">hervormdhouten.nl</a></li>
                   <li><a href="#over-ons" className="text-green-400/60 text-sm hover:text-green-300 transition-colors">Over ons</a></li>
                   <li><Link href="/reserveren" className="text-green-400/60 text-sm hover:text-green-300 transition-colors">Reserveren</Link></li>
                 </ul>

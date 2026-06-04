@@ -10,32 +10,24 @@ const activities = [
   {
     id: "koffie",
     title: "Koffie & gebak",
-    tag: "Koffie gratis",
-    tagColor: "text-green-700 bg-green-50 border-green-200",
     bgFallback: "bg-amber-50",
     imagePath: "/images/dag-koffie.jpg",
   },
   {
     id: "friet",
     title: "Friet & snacks",
-    tag: "Tegen betaling",
-    tagColor: "text-orange-700 bg-orange-50 border-orange-200",
     bgFallback: "bg-orange-50",
     imagePath: "/images/dag-friet.jpg",
   },
   {
     id: "fruit",
     title: "Fruit & bloemen",
-    tag: "Verkrijgbaar",
-    tagColor: "text-rose-700 bg-rose-50 border-rose-200",
     bgFallback: "bg-rose-50",
     imagePath: "/images/dag-fruit.jpg",
   },
   {
     id: "kids",
     title: "Kinderhoek & springkussen",
-    tag: "Vrij toegankelijk",
-    tagColor: "text-green-700 bg-green-50 border-green-200",
     bgFallback: "bg-green-50",
     imagePath: "/images/dag-kinderhoek.jpg",
   },
@@ -79,9 +71,8 @@ export default function CommunityDay({ action }: { action: Action | null }) {
 
               {/* Tekst */}
               <div className="flex flex-col flex-1 p-6 bg-white gap-3">
-                <div className="flex items-start justify-between gap-3">
+                <div>
                   <h3 className="font-bold text-green-950 text-base leading-snug">{act.title}</h3>
-                  <span className={`flex-shrink-0 text-[10px] font-semibold border px-2 py-1 rounded-full uppercase tracking-wide whitespace-nowrap ${act.tagColor}`}>{act.tag}</span>
                 </div>
                 <p className="text-gray-400 text-sm leading-relaxed">
                   {act.id === "koffie" ? coffeeText : DESCRIPTIONS[act.id]}

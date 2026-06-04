@@ -61,7 +61,7 @@ export default function PracticalInfo({ action }: { action: Action | null }) {
             <div className="rounded-2xl bg-[#f8f6f1] px-6 py-5 border border-stone-100">
               <p className="text-green-800 font-semibold text-base mb-1">Kom gewoon langs</p>
               <p className="text-gray-400 text-sm leading-relaxed">
-                Je hoeft niks te regelen. Geen registratie, geen wachttijd. Rij op, kies je pakket en laat je auto wassen door onze gemeenteleden.
+                Reserveren is handig, maar niet verplicht. Rij op, kies je pakket en laat je auto wassen door onze gemeenteleden.
               </p>
             </div>
           </div>

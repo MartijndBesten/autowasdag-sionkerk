@@ -27,7 +27,7 @@ const DEFAULT_CONTENT: Action = {
     buiten_wassen: { name: "Buiten wassen", tagline: "Alleen buitenkant", description: "Een grondige handwas van de buitenkant van je auto. Gespoten, gezeemd en afgedroogd.", includes: ["Exterieur handwas", "Spoelen & afdrogen", "Ramen wassen"] },
     compleet:      { name: "Compleet", tagline: "Buiten + binnen", description: "Buitenkant wassen, interieur stofzuigen en een eenvoudige interieurreiniging. Van buiten én van binnen fris.", includes: ["Exterieur handwas (buitenkant)", "Stofzuigen interieur", "Eenvoudige interieurreiniging"] },
   },
-  footer_email: "autowasdag@sionkerkhouten.nl", footer_website: "https://www.sionkerkhouten.nl", footer_tagline: null,
+  footer_email: "autowasdag@sionkerkhouten.nl", footer_website: "https://www.hervormdhouten.nl", footer_tagline: null,
 };
 
 const fc  = "w-full border border-stone-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-green-600 transition-colors bg-white";
