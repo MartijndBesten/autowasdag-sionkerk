@@ -26,7 +26,7 @@ export default async function VrijwilligersPage() {
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-stone-100">
               <tr>
-                {["Naam","Beschikbaarheid","Taken","Telefoon","Opmerkingen","Status","Ingediend"].map(h => (
+                {["Naam","Beschikbaarheid","Taken","Bijdrage details","Telefoon","Opmerkingen","Status","Ingediend"].map(h => (
                   <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">{h}</th>
                 ))}
               </tr>
@@ -48,6 +48,11 @@ export default async function VrijwilligersPage() {
                       ))}
                     </div>
                   </td>
+                  <td className="px-4 py-3 text-gray-500 text-xs max-w-xs">
+                    {r.contribution_details
+                      ? r.contribution_details.split("\n").map((line: string, i: number) => <p key={i}>{line}</p>)
+                      : <span className="text-gray-300">—</span>}
+                  </td>
                   <td className="px-4 py-3 text-gray-500 text-xs">{r.phone ?? "—"}</td>
                   <td className="px-4 py-3 text-gray-400 text-xs max-w-xs truncate">{r.notes ?? "—"}</td>
                   <td className="px-4 py-3">
@@ -61,7 +66,7 @@ export default async function VrijwilligersPage() {
                 </tr>
               ))}
               {rows.length === 0 && (
-                <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-400">Nog geen aanmeldingen</td></tr>
+                <tr><td colSpan={8} className="px-4 py-8 text-center text-gray-400">Nog geen aanmeldingen</td></tr>
               )}
             </tbody>
           </table>

@@ -181,6 +181,7 @@ export async function sendVolunteerEmail(data: {
   phone: string | null;
   availability: string;
   tasks: string[];
+  contribution_details: string | null;
   notes: string | null;
 }): Promise<SendResult> {
   const availLabels: Record<string, string> = {
@@ -205,18 +206,76 @@ export async function sendVolunteerEmail(data: {
     typeLabel:    "Vrijwilliger / bijdrage-aanmelding",
     accentColor:  "#1a6644",
     rows: [
-      ["Naam",           data.name],
-      ["E-mail",         data.email],
-      ["Telefoon",       data.phone],
-      ["Beschikbaarheid", availLabels[data.availability] ?? data.availability],
-      ["Gekozen taken",  data.tasks.map(t => taskLabels[t] ?? t).join(", ") || "—"],
-      ["Opmerkingen",    data.notes],
-      ["Ingediend op",   now()],
+      ["Naam",             data.name],
+      ["E-mail",           data.email],
+      ["Telefoon",         data.phone],
+      ["Beschikbaarheid",  availLabels[data.availability] ?? data.availability],
+      ["Gekozen taken",    data.tasks.map(t => taskLabels[t] ?? t).join(", ") || "—"],
+      ["Bijdrage details", data.contribution_details],
+      ["Opmerkingen",      data.notes],
+      ["Ingediend op",     now()],
     ],
     timestamp: now(),
   });
 
   return send(`Nieuwe aanmelding vrijwilliger — ${data.name}`, html);
+}
+
+// ── Bevestigingsmail naar vrijwilliger ───────────────────────────────────────
+
+export async function sendVolunteerConfirmation(data: {
+  name: string;
+  email: string;
+  availability: string;
+  tasks: string[];
+  contribution_details: string | null;
+}): Promise<SendResult> {
+  const availLabels: Record<string, string> = {
+    full_day:  "Hele dag (09:00 – 16:00)",
+    morning:   "Ochtend (09:00 – 12:30)",
+    afternoon: "Middag (12:30 – 16:00)",
+  };
+
+  const taskLabels: Record<string, string> = {
+    wassen:     "Auto's wassen",
+    koffie:     "Koffie schenken",
+    friet:      "Friet & snacks",
+    kinderhoek: "Kinderhoek",
+    opbouwen:   "Op- en afbouwen",
+    bakken:     "Iets bakken",
+    spullen:    "Spullen meenemen",
+    sponsoring: "Sponsoring / verkopen",
+    anders:     "Iets anders",
+  };
+
+  const html = buildHtml({
+    typeLabel:   "Bedankt voor je aanmelding!",
+    accentColor: "#1a6644",
+    rows: [
+      ["Naam",             data.name],
+      ["Beschikbaarheid",  availLabels[data.availability] ?? data.availability],
+      ["Jouw bijdrage",    data.tasks.map(t => taskLabels[t] ?? t).join(", ") || "—"],
+      ["Details",          data.contribution_details],
+      ["",                 "We nemen zo nodig contact op met meer informatie over de dag. Tot dan!"],
+    ],
+    timestamp: now(),
+  });
+
+  const resend = getResend();
+  if (!resend) return { ok: true };
+
+  const { error } = await resend.emails.send({
+    from:    FROM,
+    to:      data.email,
+    subject: "Bedankt voor je aanmelding — Autowasdag Sionkerk",
+    html,
+  });
+
+  if (error) {
+    console.error("[email] Vrijwilliger bevestiging mislukt:", error);
+    return { ok: false, error: error.message };
+  }
+  return { ok: true };
 }
 
 // ── Gebak-bijdrage ────────────────────────────────────────────────────────────

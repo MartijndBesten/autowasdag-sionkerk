@@ -32,19 +32,36 @@ const categories = [
 
 const allOptions = categories.flatMap(c => c.options);
 
+const AVAIL_OPTIONS = [
+  { value: "full_day",  label: "Hele dag",  sub: "09:00 – 16:00" },
+  { value: "morning",   label: "Ochtend",   sub: "09:00 – 12:30" },
+  { value: "afternoon", label: "Middag",    sub: "12:30 – 16:00" },
+];
+
 const fieldCls = "w-full border border-stone-200 bg-white rounded-xl px-4 py-3 text-sm text-green-950 placeholder-gray-300 focus:outline-none focus:border-green-600 focus:ring-1 focus:ring-green-600 transition-colors";
 const labelCls = "block text-xs font-semibold text-green-700 uppercase tracking-wider mb-1.5";
 
 export default function HelpMeeClient({ dateFormatted }: { dateFormatted: string }) {
-  const [selected, setSelected] = useState<string[]>([]);
-  const [form, setForm]         = useState({ name: "", email: "", phone: "", notes: "" });
-  const [status, setStatus]     = useState<"idle" | "loading" | "success" | "error">("idle");
-  const [errorMsg, setErrorMsg] = useState("");
+  const [selected,     setSelected]     = useState<string[]>([]);
+  const [availability, setAvailability] = useState("full_day");
+  const [form,         setForm]         = useState({ name: "", email: "", phone: "", notes: "" });
+  const [details,      setDetails]      = useState({ bakken: "", spullen: "", sponsoring: "" });
+  const [status,       setStatus]       = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [errorMsg,     setErrorMsg]     = useState("");
 
   function toggle(id: string) {
     setSelected(p => p.includes(id) ? p.filter(r => r !== id) : [...p, id]);
   }
   function set(k: keyof typeof form, v: string) { setForm(p => ({ ...p, [k]: v })); }
+  function setDetail(k: keyof typeof details, v: string) { setDetails(p => ({ ...p, [k]: v })); }
+
+  function buildContributionDetails(): string | null {
+    const parts: string[] = [];
+    if (selected.includes("bakken")     && details.bakken.trim())     parts.push(`Bakken: ${details.bakken.trim()}`);
+    if (selected.includes("spullen")    && details.spullen.trim())    parts.push(`Spullen: ${details.spullen.trim()}`);
+    if (selected.includes("sponsoring") && details.sponsoring.trim()) parts.push(`Sponsoring: ${details.sponsoring.trim()}`);
+    return parts.length ? parts.join("\n") : null;
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -55,12 +72,13 @@ export default function HelpMeeClient({ dateFormatted }: { dateFormatted: string
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name:         form.name,
-          email:        form.email,
-          phone:        form.phone || null,
-          availability: "full_day",
-          tasks:        selected.length ? selected : ["onbekend"],
-          notes:        form.notes || null,
+          name:                 form.name,
+          email:                form.email,
+          phone:                form.phone || null,
+          availability,
+          tasks:                selected.length ? selected : ["onbekend"],
+          contribution_details: buildContributionDetails(),
+          notes:                form.notes || null,
         }),
       });
       const json = await res.json();
@@ -78,22 +96,43 @@ export default function HelpMeeClient({ dateFormatted }: { dateFormatted: string
       .map(id => allOptions.find(o => o.id === id))
       .filter(Boolean)
       .map(o => `${o!.emoji} ${o!.title}`);
+    const contribDetails = buildContributionDetails();
+    const availLabel = AVAIL_OPTIONS.find(a => a.value === availability)?.label ?? availability;
 
     return (
       <div className="max-w-md mx-auto px-4 pt-28 pb-20 text-center">
         <div className="text-5xl mb-5">🙌</div>
         <h1 className="text-3xl font-bold text-green-950 mb-3">Dankjewel, {form.name}!</h1>
         <p className="text-green-800/60 text-lg leading-relaxed mb-4">We zijn blij dat je meedoet.</p>
-        {chosenLabels.length > 0 && (
-          <div className="bg-white rounded-2xl p-4 shadow-sm border border-stone-100 text-left mb-6">
-            <p className="text-xs font-semibold text-green-600 uppercase tracking-wider mb-2">Jouw bijdrage</p>
-            <ul className="space-y-1">
-              {chosenLabels.map(l => <li key={l} className="text-sm text-green-900">{l}</li>)}
-            </ul>
+
+        <div className="bg-white rounded-2xl p-4 shadow-sm border border-stone-100 text-left mb-4 space-y-3">
+          {chosenLabels.length > 0 && (
+            <div>
+              <p className="text-xs font-semibold text-green-600 uppercase tracking-wider mb-1.5">Jouw bijdrage</p>
+              <ul className="space-y-1">
+                {chosenLabels.map(l => <li key={l} className="text-sm text-green-900">{l}</li>)}
+              </ul>
+            </div>
+          )}
+          {contribDetails && (
+            <div>
+              <p className="text-xs font-semibold text-green-600 uppercase tracking-wider mb-1.5">Details</p>
+              {contribDetails.split("\n").map((line, i) => (
+                <p key={i} className="text-sm text-gray-600">{line}</p>
+              ))}
+            </div>
+          )}
+          <div>
+            <p className="text-xs font-semibold text-green-600 uppercase tracking-wider mb-1">Beschikbaarheid</p>
+            <p className="text-sm text-gray-600">{availLabel}</p>
           </div>
-        )}
+        </div>
+
+        <p className="text-gray-400 text-sm leading-relaxed mb-2">
+          Er is een bevestiging verstuurd naar <strong>{form.email}</strong>.
+        </p>
         <p className="text-gray-400 text-sm leading-relaxed mb-8">
-          We nemen contact op via {form.email} met meer informatie over de dag.
+          We nemen zo nodig contact op met meer informatie over de dag.
         </p>
         <Link href="/" className="btn-primary inline-flex">Terug naar de homepage</Link>
       </div>
@@ -101,6 +140,8 @@ export default function HelpMeeClient({ dateFormatted }: { dateFormatted: string
   }
 
   // ── Formulier ───────────────────────────────────────────────────────────────
+  const showDetails = selected.some(s => ["bakken", "spullen", "sponsoring"].includes(s));
+
   return (
     <div className="max-w-xl mx-auto px-4 sm:px-6 pb-20">
       <div className="pt-20 sm:pt-24 pb-2">
@@ -164,6 +205,54 @@ export default function HelpMeeClient({ dateFormatted }: { dateFormatted: string
           </p>
         )}
 
+        {/* Conditionele detailvelden */}
+        {showDetails && (
+          <div className="rounded-2xl bg-stone-50 border border-stone-100 p-4 space-y-4">
+            <p className="text-xs font-semibold text-green-600 uppercase tracking-wider">Vertel ons iets meer</p>
+
+            {selected.includes("bakken") && (
+              <div>
+                <label className={labelCls}>Wat ga je bakken? <span className="text-gray-300 font-normal normal-case tracking-normal">(optioneel)</span></label>
+                <textarea rows={2} value={details.bakken} onChange={e => setDetail("bakken", e.target.value)}
+                  placeholder="bijv. appeltaart en koekjes, ca. 30 stuks"
+                  className={`${fieldCls} resize-none`} />
+              </div>
+            )}
+
+            {selected.includes("spullen") && (
+              <div>
+                <label className={labelCls}>Wat neem je mee? <span className="text-gray-300 font-normal normal-case tracking-normal">(optioneel)</span></label>
+                <textarea rows={2} value={details.spullen} onChange={e => setDetail("spullen", e.target.value)}
+                  placeholder="bijv. 5 emmers en sponzen"
+                  className={`${fieldCls} resize-none`} />
+              </div>
+            )}
+
+            {selected.includes("sponsoring") && (
+              <div>
+                <label className={labelCls}>Hoe wil je bijdragen? <span className="text-gray-300 font-normal normal-case tracking-normal">(optioneel)</span></label>
+                <textarea rows={2} value={details.sponsoring} onChange={e => setDetail("sponsoring", e.target.value)}
+                  placeholder="bijv. frisdrank en chips namens Bakkerij De Vries"
+                  className={`${fieldCls} resize-none`} />
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Beschikbaarheid */}
+        <div>
+          <p className="text-xs font-semibold text-green-600 uppercase tracking-wider mb-3">Wanneer kun je er zijn?</p>
+          <div className="grid grid-cols-3 gap-2">
+            {AVAIL_OPTIONS.map(opt => (
+              <button key={opt.value} type="button" onClick={() => setAvailability(opt.value)}
+                className={`rounded-xl border-2 px-3 py-3 text-center transition-colors ${availability === opt.value ? "border-green-700 bg-green-50" : "border-stone-200 hover:border-green-300"}`}>
+                <p className={`font-semibold text-sm ${availability === opt.value ? "text-green-800" : "text-gray-700"}`}>{opt.label}</p>
+                <p className={`text-xs mt-0.5 ${availability === opt.value ? "text-green-600" : "text-gray-400"}`}>{opt.sub}</p>
+              </button>
+            ))}
+          </div>
+        </div>
+
         <div className="flex items-center gap-3">
           <div className="h-px flex-1 bg-green-200/50" />
           <span className="text-xs text-gray-300 font-medium">jouw gegevens</span>
@@ -189,9 +278,9 @@ export default function HelpMeeClient({ dateFormatted }: { dateFormatted: string
               placeholder="06 00 00 00 00" className={fieldCls} />
           </div>
           <div>
-            <label className={labelCls}>Wil je iets kwijt? <span className="text-gray-300 font-normal normal-case tracking-normal">(optioneel)</span></label>
+            <label className={labelCls}>Wil je nog iets kwijt? <span className="text-gray-300 font-normal normal-case tracking-normal">(optioneel)</span></label>
             <textarea rows={3} value={form.notes} onChange={e => set("notes", e.target.value)}
-              placeholder="Hoe laat je er bent, wat je meebrengt, een vraag…"
+              placeholder="Hoe laat je er bent, een vraag, bijzonderheden…"
               className={`${fieldCls} resize-none`} />
           </div>
         </div>
