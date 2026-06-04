@@ -4,7 +4,7 @@ import Link from "next/link";
 import Navigation from "@/components/Navigation";
 import ReserverenForm from "@/components/forms/ReserverenPageForm";
 import ModalRoot from "@/components/ModalRoot";
-import { getEventDate, formatEventDate } from "@/lib/event";
+import { getActiveAction, getEventDate, formatEventDate } from "@/lib/event";
 
 export const metadata: Metadata = {
   title: "Reserveren — Autowasdag Sionkerk Houten",
@@ -12,7 +12,8 @@ export const metadata: Metadata = {
 };
 
 export default async function ReserverenPage() {
-  const eventDate     = await getEventDate();
+  const action        = await getActiveAction();
+  const eventDate     = action?.event_date ?? await getEventDate();
   const dateFormatted = formatEventDate(eventDate);
 
   return (

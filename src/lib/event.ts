@@ -1,18 +1,38 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import type { Action } from "@/lib/supabase/types";
 
-export async function getEventDate(): Promise<string> {
+// ── Actieve actie ophalen ─────────────────────────────────────────────────────
+
+export async function getActiveAction(): Promise<Action | null> {
   try {
     const supabase = createAdminClient() as any;
     const { data } = await supabase
-      .from("settings")
-      .select("value")
-      .eq("key", "event")
+      .from("actions")
+      .select("*")
+      .eq("is_active", true)
+      .eq("is_archived", false)
       .single();
+    return (data as Action) ?? null;
+  } catch {
+    return null;
+  }
+}
+
+// Backward-compat: leest datum uit actieve actie, valt terug op settings tabel
+export async function getEventDate(): Promise<string> {
+  const action = await getActiveAction();
+  if (action?.event_date) return action.event_date;
+  try {
+    const supabase = createAdminClient() as any;
+    const { data } = await supabase
+      .from("settings").select("value").eq("key", "event").single();
     return ((data?.value as Record<string, unknown>)?.date as string) ?? "";
   } catch {
     return "";
   }
 }
+
+// ── Datum-hulpfuncties ────────────────────────────────────────────────────────
 
 export function formatEventDate(dateStr: string): string {
   if (!dateStr) return "";

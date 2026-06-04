@@ -8,22 +8,22 @@ import AboutSection from "@/components/AboutSection";
 import PracticalInfo from "@/components/PracticalInfo";
 import Footer from "@/components/Footer";
 import ModalRoot from "@/components/ModalRoot";
-import { getEventDate } from "@/lib/event";
+import { getActiveAction } from "@/lib/event";
 
 export default async function Home() {
-  const eventDate = await getEventDate();
+  const action = await getActiveAction();
 
   return (
     <main>
       <Navigation />
-      <Hero eventDate={eventDate} />
+      <Hero action={action} />
       <HelpMee />
-      <HowItWorks />
-      <CommunityDay />
-      <Packages />
+      <HowItWorks action={action} />
+      <CommunityDay action={action} />
+      <Packages action={action} />
       <AboutSection />
-      <PracticalInfo eventDate={eventDate} />
-      <Footer eventDate={eventDate} />
+      <PracticalInfo action={action} />
+      <Footer action={action} />
       <ModalRoot />
     </main>
   );

@@ -89,12 +89,26 @@ export interface PriceSettings {
   compleet: number;
 }
 
+export interface TimelineItem {
+  time: string; title: string; desc: string; color?: string;
+}
+export interface FaqItem {
+  question: string; answer: string;
+}
+export interface PracticalItem {
+  label: string; value: string; sub?: string;
+}
+export interface PackageDesc {
+  name: string; tagline: string; description: string; includes: string[];
+}
+
 export interface Action {
   id: string;
   name: string;
   is_active: boolean;
   is_archived: boolean;
   created_at: string;
+  // Evenement
   event_date: string | null;
   start_time: string;
   end_time: string;
@@ -106,6 +120,27 @@ export interface Action {
   price_compleet: number;
   notify_email: string | null;
   internal_notes: string | null;
+  // Locatie
+  location_address: string;
+  location_city: string;
+  location_postal: string;
+  location_maps_url: string | null;
+  // Homepage teksten
+  hero_title: string;
+  hero_subtitle: string;
+  hero_description: string;
+  hero_image_path: string;
+  action_tagline: string;
+  coffee_text: string;
+  // Gestructureerde content
+  timeline: TimelineItem[];
+  faq: FaqItem[];
+  practical_info: PracticalItem[];
+  package_descriptions: Record<string, PackageDesc>;
+  // Footer
+  footer_email: string;
+  footer_website: string;
+  footer_tagline: string | null;
 }
 
 export interface Database {
