@@ -35,11 +35,14 @@ export async function POST(req: NextRequest) {
       .from("settings").select("value").eq("key", "event").single();
     const washBays = ((settings?.value as Record<string, unknown>)?.wash_bays as number) ?? 2;
 
-    // Check 1: huidig slot — max washBays reserveringen (1 auto = 1 slot)
-    const { data: occ1 } = await supabase.rpc("get_slot_occupancy", {
-      p_date: reservation_date,
-      p_time: reservation_time,
-    });
+    // Check 1: huidig slot — count(*) op status ≠ cancelled (niet sum slot_count)
+    const { count: occ1 } = await supabase
+      .from("car_reservations")
+      .select("id", { count: "exact", head: true })
+      .eq("reservation_date", reservation_date)
+      .eq("reservation_time", reservation_time)
+      .neq("status", "cancelled");
+
     if ((occ1 ?? 0) >= washBays) {
       return NextResponse.json({ error: "Dit tijdslot is helaas niet meer beschikbaar." }, { status: 409 });
     }
@@ -47,16 +50,19 @@ export async function POST(req: NextRequest) {
     // Check 2: compleet-pakket bezet ook het volgende 20-minuten-slot
     if (slotsNeeded > 1) {
       const nextTime = addMinutes(reservation_time, 20);
-      const { data: occ2 } = await supabase.rpc("get_slot_occupancy", {
-        p_date: reservation_date,
-        p_time: nextTime,
-      });
+      const { count: occ2 } = await supabase
+        .from("car_reservations")
+        .select("id", { count: "exact", head: true })
+        .eq("reservation_date", reservation_date)
+        .eq("reservation_time", nextTime)
+        .neq("status", "cancelled");
+
       if ((occ2 ?? 0) >= washBays) {
         return NextResponse.json({ error: "Dit tijdslot is helaas niet meer beschikbaar." }, { status: 409 });
       }
     }
 
-    // Opslaan — slot_count altijd 1 (één auto = één wasplaats), status direct confirmed
+    // Opslaan — slot_count 1 (één auto = één wasplaats), status confirmed
     const { data: reservation, error: dbErr } = await supabase
       .from("car_reservations")
       .insert({

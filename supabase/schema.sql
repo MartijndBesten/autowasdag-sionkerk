@@ -322,7 +322,7 @@ language sql
 security definer
 stable
 as $$
-  select coalesce(sum(slot_count), 0)::int
+  select count(*)::int
   from public.car_reservations
   where reservation_date = p_date
     and reservation_time = p_time
@@ -341,7 +341,7 @@ as $$
   ),
   occupancy as (
     select reservation_time,
-           sum(slot_count)::int as booked
+           count(*)::int as booked
     from public.car_reservations
     where reservation_date = p_date
       and status <> 'cancelled'
@@ -355,11 +355,10 @@ as $$
   )
   select
     s.slot_time,
-    c.wash_bays - coalesce(o.booked, 0) as available_bays
+    greatest(0, c.wash_bays - coalesce(o.booked, 0)) as available_bays
   from all_slots s
   cross join config c
   left join occupancy o on o.reservation_time = s.slot_time
-  where c.wash_bays - coalesce(o.booked, 0) > 0
   order by s.slot_time;
 $$;
 

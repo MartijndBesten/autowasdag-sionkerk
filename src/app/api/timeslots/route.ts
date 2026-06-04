@@ -16,42 +16,57 @@ export async function GET(req: NextRequest) {
   try {
     const supabase = createAdminClient() as any;
 
-    // Haal event-instellingen op
     const { data: settingRow } = await supabase
       .from("settings")
       .select("value")
       .eq("key", "event")
       .single();
 
-    const settings = (settingRow?.value as Record<string, unknown>) ?? {};
-    const washBays  = (settings.wash_bays as number)   ?? 2;
-    const startTime = (settings.start_time as string)  ?? "09:00";
-    const endTime   = (settings.end_time as string)    ?? "16:00";
+    const settings  = (settingRow?.value as Record<string, unknown>) ?? {};
+    const washBays  = (settings.wash_bays  as number) ?? 2;
+    const startTime = (settings.start_time as string) ?? "09:00";
+    const endTime   = (settings.end_time   as string) ?? "16:00";
 
-    // Alle slots genereren
     const allSlots = generateSlots(startTime, endTime, 20);
 
-    // Bezetting ophalen via DB-functie
-    const { data: occupancy } = await supabase
-      .rpc("get_available_slots", { p_date: date });
+    // Tel bezette slots rechtstreeks op status (niet via sum(slot_count)).
+    // confirmed, pending en completed tellen als bezet; cancelled niet.
+    const { data: bookings } = await supabase
+      .from("car_reservations")
+      .select("reservation_time, package_type")
+      .eq("reservation_date", date)
+      .neq("status", "cancelled");
 
-    const occupancyMap = new Map<string, number>(
-      (occupancy ?? []).map((r: { slot_time: string; available_bays: number }) => [
-        r.slot_time.slice(0, 5),
-        r.available_bays,
-      ])
-    );
+    // countMap: slot → aantal auto's dat op dat tijdstip begint
+    // compleetMap: slot → aantal compleet-auto's dat op dat tijdstip begint (voor spillover)
+    const countMap   = new Map<string, number>();
+    const compleetMap = new Map<string, number>();
 
-    // Slots opbouwen
-    const slots: AvailableSlot[] = allSlots.map(time => ({
-      time,
-      label: `${time} uur`,
-      available: (occupancyMap.get(time) ?? washBays) > 0,
-      availableBays: occupancyMap.get(time) ?? washBays,
-    }));
+    for (const b of (bookings ?? []) as { reservation_time: string; package_type: string }[]) {
+      const t = b.reservation_time.slice(0, 5);
+      countMap.set(t, (countMap.get(t) ?? 0) + 1);
+      if (b.package_type === "compleet") {
+        compleetMap.set(t, (compleetMap.get(t) ?? 0) + 1);
+      }
+    }
+
+    // Effectieve bezetting per slot = starts op dit slot
+    //   + overloop van compleet-auto's die op het vorige slot begonnen
+    const slots: AvailableSlot[] = allSlots.map((time, idx) => {
+      const own      = countMap.get(time) ?? 0;
+      const prevTime = idx > 0 ? allSlots[idx - 1] : null;
+      const spillover = prevTime ? (compleetMap.get(prevTime) ?? 0) : 0;
+      const effective = own + spillover;
+      const avail     = Math.max(0, washBays - effective);
+      return {
+        time,
+        label:         `${time} uur`,
+        available:     avail > 0,
+        availableBays: avail,
+      };
+    });
 
     const filtered = filterSlotsForPackage(slots, pkg, washBays);
-
     return NextResponse.json({ slots: filtered });
   } catch (err) {
     console.error("[api/timeslots]", err);
