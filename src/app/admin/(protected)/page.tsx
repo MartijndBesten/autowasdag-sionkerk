@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function getStats(supabase: any) {
   const [res, vol, con] = await Promise.all([
-    supabase.from("car_reservations").select("id, payment_status, package_type, extra_donation, status"),
+    supabase.from("car_reservations").select("id, full_name, reservation_date, reservation_time, payment_status, package_type, extra_donation, status").order("created_at", { ascending: false }),
     supabase.from("volunteer_signups").select("id, status"),
     supabase.from("contribution_signups").select("id, status"),
   ]);
