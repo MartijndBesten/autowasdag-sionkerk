@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -13,6 +13,16 @@ export default function AdminLoginForm() {
   const [password, setPassword] = useState("");
   const [status, setStatus]     = useState<"idle" | "loading" | "error">("idle");
   const [msg, setMsg]           = useState(error === "no_access" ? "Geen toegang tot het admin-paneel." : "");
+
+  // Als de gebruiker al is ingelogd én admin is, doorsturen naar /admin
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return;
+      supabase.from("admin_users").select("id").eq("id", user.id).eq("is_active", true).single()
+        .then(({ data }) => { if (data) router.replace("/admin"); });
+    });
+  }, [router]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

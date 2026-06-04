@@ -23,37 +23,27 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  const pathname = request.nextUrl.pathname;
-
-  // /admin/login: toon altijd — stuur ingelogde admins door naar /admin
-  if (pathname.startsWith("/admin/login")) {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      const { data: adminUser } = await supabase
-        .from("admin_users")
-        .select("id")
-        .eq("id", user.id)
-        .eq("is_active", true)
-        .single();
-      if (adminUser) {
-        return NextResponse.redirect(new URL("/admin", request.url));
-      }
-    }
+  // /admin/login is altijd publiek — nooit redirecten vanuit middleware.
+  // (redirect naar /admin na inloggen gebeurt client-side)
+  if (request.nextUrl.pathname.startsWith("/admin/login")) {
     return supabaseResponse;
   }
 
   // Overige /admin/* routes: vereisen ingelogde admin
-  if (pathname.startsWith("/admin")) {
+  if (request.nextUrl.pathname.startsWith("/admin")) {
     const { data: { user } } = await supabase.auth.getUser();
+
     if (!user) {
       return NextResponse.redirect(new URL("/admin/login", request.url));
     }
+
     const { data: adminUser } = await supabase
       .from("admin_users")
       .select("id")
       .eq("id", user.id)
       .eq("is_active", true)
       .single();
+
     if (!adminUser) {
       return NextResponse.redirect(new URL("/admin/login?error=no_access", request.url));
     }
