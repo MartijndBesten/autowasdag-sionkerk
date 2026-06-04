@@ -5,15 +5,15 @@ import type { Action } from "@/lib/supabase/types";
 
 const DEFAULT_PACKAGES = [
   {
-    id: "buiten_wassen", name: "Buiten wassen", tagline: "Buitenwas",
-    description: "Een grondige handwas aan de buitenkant. Gespoeld, gezeemd en afgedroogd.",
+    id: "buiten_wassen", name: "Buiten wassen", tagline: "Alleen buitenkant",
+    description: "Een grondige handwas van de buitenkant van je auto. Gespoten, gezeemd en afgedroogd.",
     includes: ["Exterieur handwas", "Spoelen & afdrogen", "Ramen wassen"],
     variant: "light" as const,
   },
   {
-    id: "compleet", name: "Compleet", tagline: "Buiten én binnen",
-    description: "Van buiten én van binnen helemaal fris. De meest gekozen bijdrage van de dag.",
-    includes: ["Buitenwas (zoals Buitenwas)", "Interieur reinigen", "Wielen poetsen"],
+    id: "compleet", name: "Compleet", tagline: "Buiten + binnen",
+    description: "Buitenkant wassen, interieur stofzuigen en een eenvoudige interieurreiniging. Van buiten én van binnen fris.",
+    includes: ["Buitenwas (zoals Buiten wassen)", "Stofzuigen interieur", "Eenvoudige interieurreiniging"],
     variant: "featured" as const,
   },
 ];
@@ -99,7 +99,7 @@ export default function Packages({ action }: { action: Action | null }) {
           </div>
           <div className="flex items-start gap-3 px-5 py-4 rounded-xl bg-gold-100/60 border border-gold-200/60">
             <svg className="w-4 h-4 text-green-700 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-            <p className="text-green-800 text-sm"><strong>Reserveren is handig</strong>, dan bent u zeker van een plek. Gewoon langskomen mag ook — dan plannen we u op de dag zelf in op een vrij moment.</p>
+            <p className="text-green-800 text-sm"><strong>Reserveren is handig</strong>, dan ben je zeker van een plek. Gewoon langskomen mag ook — we plannen je op de dag zelf in op een vrij moment.</p>
           </div>
         </div>
       </div>

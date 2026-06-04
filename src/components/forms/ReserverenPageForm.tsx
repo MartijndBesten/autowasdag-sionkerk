@@ -163,12 +163,12 @@ export default function ReserverenPageForm({ eventDate }: { eventDate: string })
         <div className="sm:col-span-2">
           <label className={lbl}>Naam <span className="text-red-400">*</span></label>
           <input required value={form.full_name} onChange={e => set("full_name", e.target.value)}
-            placeholder="Uw volledige naam" className={fc} />
+            placeholder="Je volledige naam" className={fc} />
         </div>
         <div>
           <label className={lbl}>E-mailadres <span className="text-red-400">*</span></label>
           <input type="email" required value={form.email} onChange={e => set("email", e.target.value)}
-            placeholder="uw@email.nl" className={fc} />
+            placeholder="jouw@email.nl" className={fc} />
         </div>
         <div>
           <label className={lbl}>Telefoonnummer <span className="text-gray-300 font-normal">(optioneel)</span></label>
@@ -198,7 +198,7 @@ export default function ReserverenPageForm({ eventDate }: { eventDate: string })
       <div>
         <label className={lbl}>Opmerkingen <span className="text-gray-300 font-normal">(optioneel)</span></label>
         <textarea rows={3} value={form.notes} onChange={e => set("notes", e.target.value)}
-          placeholder="Bijzonderheden over uw auto, een vraag, etc." className={`${fc} resize-none`} />
+          placeholder="Bijzonderheden over je auto, een vraag, etc." className={`${fc} resize-none`} />
       </div>
 
       {errorMsg && <p className="text-red-500 text-sm bg-red-50 border border-red-200 rounded-xl px-4 py-2">{errorMsg}</p>}

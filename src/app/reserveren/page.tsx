@@ -37,8 +37,8 @@ export default async function ReserverenPage() {
             Reserveer je wasbeurt
           </h1>
           <p className="mt-4 text-gray-500 text-lg leading-relaxed">
-            Vul je gegevens in en kies je pakket. Reserveren is handig, dan bent
-            u zeker van een plek. Langskomen zonder reservering kan ook — zolang
+            Vul je gegevens in en kies je pakket. Reserveren is handig, dan ben
+            je zeker van een plek. Langskomen zonder reservering kan ook — zolang
             er plek is.
           </p>
 

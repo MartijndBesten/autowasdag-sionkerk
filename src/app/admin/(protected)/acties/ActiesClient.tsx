@@ -24,8 +24,8 @@ const DEFAULT_CONTENT: Action = {
   coffee_text: "Laat je reservering zien en ontvang een gratis bakje koffie. Gebak en andere lekkernijen zijn verkrijgbaar tijdens de actiedag.",
   timeline: [], faq: [], practical_info: [],
   package_descriptions: {
-    buiten_wassen: { name: "Buiten wassen", tagline: "Buitenwas", description: "Een grondige handwas aan de buitenkant.", includes: ["Exterieur handwas", "Spoelen & afdrogen", "Ramen wassen"] },
-    compleet:      { name: "Compleet", tagline: "Buiten én binnen", description: "Van buiten én van binnen helemaal fris.", includes: ["Buitenwas", "Interieur reinigen", "Wielen poetsen"] },
+    buiten_wassen: { name: "Buiten wassen", tagline: "Alleen buitenkant", description: "Een grondige handwas van de buitenkant van je auto. Gespoten, gezeemd en afgedroogd.", includes: ["Exterieur handwas", "Spoelen & afdrogen", "Ramen wassen"] },
+    compleet:      { name: "Compleet", tagline: "Buiten + binnen", description: "Buitenkant wassen, interieur stofzuigen en een eenvoudige interieurreiniging. Van buiten én van binnen fris.", includes: ["Buitenwas (zoals Buiten wassen)", "Stofzuigen interieur", "Eenvoudige interieurreiniging"] },
   },
   footer_email: "autowasdag@sionkerkhouten.nl", footer_website: "https://www.sionkerkhouten.nl", footer_tagline: null,
 };

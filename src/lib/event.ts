@@ -42,7 +42,7 @@ export function formatEventDate(dateStr: string): string {
   if (!dateStr) return "";
   const [y, m, d] = dateStr.split("-").map(Number);
   const date = new Date(y, m - 1, d);
-  const s = date.toLocaleDateString("nl-NL", { weekday: "long", day: "numeric", month: "long" });
+  const s = date.toLocaleDateString("nl-NL", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 

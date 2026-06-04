@@ -19,6 +19,12 @@ const activities = [
     icon: <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 3v10.5a1.5 1.5 0 003 0V3M12 3h3a3 3 0 013 3v1a3 3 0 01-3 3h-3" /><path strokeLinecap="round" strokeLinejoin="round" d="M6 3H3v4a3 3 0 003 3h.5" /><path strokeLinecap="round" strokeLinejoin="round" d="M9 18h6M12 18v3" /></svg>,
   },
   {
+    id: "fruit", title: "Fruit & bloemen",
+    tag: "Verkrijgbaar", tagColor: "text-rose-700 bg-rose-50 border-rose-200",
+    bgPlaceholder: "bg-rose-50", iconColor: "text-rose-400",
+    icon: <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>,
+  },
+  {
     id: "kids", title: "Kinderhoek & springkussen",
     tag: "Vrij toegankelijk", tagColor: "text-green-700 bg-green-50 border-green-200",
     bgPlaceholder: "bg-green-50", iconColor: "text-green-500",
@@ -27,8 +33,9 @@ const activities = [
 ];
 
 const DESCRIPTIONS: Record<string, string> = {
-  koffie: "", // filled below using action.coffee_text
+  koffie: "", // ingevuld via action.coffee_text
   friet:  "Vanaf de middag zijn er verse friet en snacks — lekker buiten op het plein. Tegen betaling; opbrengst gaat naar de zalen.",
+  fruit:  "Vers seizoensfruit en mooie bloemen — verkrijgbaar tijdens de actiedag. Leuk als cadeau of voor thuis.",
   kids:   "De kleintjes vervelen zich geen moment. Er is een springkussen op het plein en een gezellige kinderhoek binnen.",
 };
 
@@ -47,7 +54,7 @@ export default function CommunityDay({ action }: { action: Action | null }) {
           <p className="text-gray-400 text-base max-w-sm lg:ml-auto">De Autowasdag is een gezellige communitydag. Neem de tijd — er is genoeg te doen en te eten.</p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-5">
           {activities.map(act => (
             <div key={act.id} className="flex flex-col rounded-2xl overflow-hidden border border-stone-100 shadow-[0_2px_12px_rgba(0,0,0,0.05)] hover:shadow-[0_4px_20px_rgba(0,0,0,0.08)] transition-shadow duration-200">
               <div className={`${act.bgPlaceholder} flex items-center justify-center`} style={{ height: 148 }}>
@@ -80,12 +87,7 @@ export default function CommunityDay({ action }: { action: Action | null }) {
                 <span className="inline-flex items-center text-green-200/60 text-sm">of gewoon vroeg op de dag zelf langskomen</span>
               </div>
             </div>
-            <div className="hidden lg:flex items-center justify-center bg-green-700/40 min-h-[220px]">
-              <div className="text-center text-green-600/30">
-                <svg className="w-14 h-14 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}><path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
-                <span className="text-xs">foto vrijwilligers</span>
-              </div>
-            </div>
+            <div className="hidden lg:block bg-green-700/40 min-h-[220px] rounded-r-2xl" />
           </div>
         </div>
       </div>
