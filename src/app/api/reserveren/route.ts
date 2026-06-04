@@ -6,6 +6,12 @@ import type { PackageType } from "@/lib/supabase/types";
 
 const VALID_PACKAGES: PackageType[] = ["buiten_wassen", "binnen_zuigen", "compleet"];
 
+function addMinutes(time: string, minutes: number): string {
+  const [h, m] = time.split(":").map(Number);
+  const total = h * 60 + m + minutes;
+  return `${Math.floor(total / 60).toString().padStart(2, "0")}:${(total % 60).toString().padStart(2, "0")}`;
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -15,7 +21,6 @@ export async function POST(req: NextRequest) {
       extra_donation, notes,
     } = body;
 
-    // Validatie
     if (!full_name || !email || !package_type || !reservation_date || !reservation_time) {
       return NextResponse.json({ error: "Verplichte velden ontbreken." }, { status: 400 });
     }
@@ -25,28 +30,38 @@ export async function POST(req: NextRequest) {
 
     const supabase = createAdminClient() as any;
 
-    // Controleer beschikbaarheid (race-condition safe via DB)
     const slotsNeeded = PACKAGE_SLOTS[package_type as PackageType];
     const { data: settings } = await supabase
       .from("settings").select("value").eq("key", "event").single();
-    const washBays = ((settings?.value as Record<string,unknown>)?.wash_bays as number) ?? 2;
+    const washBays = ((settings?.value as Record<string, unknown>)?.wash_bays as number) ?? 2;
 
-    // Controleer huidig slot
-    const { data: occupancy } = await supabase
-      .rpc("get_slot_occupancy", {
-        p_date: reservation_date,
-        p_time: reservation_time,
-      });
-    if ((occupancy ?? 0) + slotsNeeded > washBays * slotsNeeded) {
+    // Check 1: huidig slot — max washBays reserveringen (1 auto = 1 slot)
+    const { data: occ1 } = await supabase.rpc("get_slot_occupancy", {
+      p_date: reservation_date,
+      p_time: reservation_time,
+    });
+    if ((occ1 ?? 0) >= washBays) {
       return NextResponse.json({ error: "Dit tijdslot is helaas niet meer beschikbaar." }, { status: 409 });
     }
 
-    // Opslaan
+    // Check 2: compleet-pakket bezet ook het volgende 20-minuten-slot
+    if (slotsNeeded > 1) {
+      const nextTime = addMinutes(reservation_time, 20);
+      const { data: occ2 } = await supabase.rpc("get_slot_occupancy", {
+        p_date: reservation_date,
+        p_time: nextTime,
+      });
+      if ((occ2 ?? 0) >= washBays) {
+        return NextResponse.json({ error: "Dit tijdslot is helaas niet meer beschikbaar." }, { status: 409 });
+      }
+    }
+
+    // Opslaan — slot_count altijd 1 (één auto = één wasplaats), status direct confirmed
     const { data: reservation, error: dbErr } = await supabase
       .from("car_reservations")
       .insert({
         full_name,
-        phone:             phone      || null,
+        phone:             phone         || null,
         email,
         license_plate:     license_plate || null,
         package_type:      package_type as PackageType,
@@ -55,8 +70,8 @@ export async function POST(req: NextRequest) {
         reservation_time,
         extra_donation:    Number(extra_donation) || 0,
         notes:             notes || null,
-        slot_count:        slotsNeeded,
-        status:            "pending",
+        slot_count:        1,
+        status:            "confirmed",
         payment_status:    "unpaid",
         confirmation_sent: false,
       })
@@ -65,18 +80,15 @@ export async function POST(req: NextRequest) {
 
     if (dbErr) throw dbErr;
 
-    // Admin-notificatie
     sendReservationEmail({
       name: full_name, email, phone: phone || null, package: package_type, notes: notes || null,
     }).catch(console.error);
 
-    // Bevestiging naar bezoeker
     sendReservationConfirmation({
       name: full_name, email, package: package_type,
       date: reservation_date, time: reservation_time,
     }).catch(console.error);
 
-    // Log e-mail
     await supabase.from("email_logs").insert({
       to_address:     "m.denbesten@live.nl",
       subject:        `Nieuwe reservering — ${full_name}`,
@@ -86,7 +98,6 @@ export async function POST(req: NextRequest) {
       status:         "sent",
     });
 
-    // Audit log
     await supabase.from("audit_logs").insert({
       action:     "INSERT",
       table_name: "car_reservations",
