@@ -41,7 +41,7 @@ export default function AboutSection() {
               <p className="label-small text-green-500 mb-3">Over de Sionkerk</p>
               <p className="text-green-100/50 text-sm leading-relaxed max-w-sm">
                 De Sionkerk is onderdeel van de Hervormde Gemeente Houten. Elke zondag
-                zijn er kerkdiensten om 09:30 en 18:30 uur. Daarnaast zijn er activiteiten
+                zijn er kerkdiensten om 09:30 en 16:15 uur. Daarnaast zijn er activiteiten
                 voor kinderen, jongeren en volwassenen.
               </p>
               <a
