@@ -89,6 +89,25 @@ export interface PriceSettings {
   compleet: number;
 }
 
+export interface Action {
+  id: string;
+  name: string;
+  is_active: boolean;
+  is_archived: boolean;
+  created_at: string;
+  event_date: string | null;
+  start_time: string;
+  end_time: string;
+  wash_bays: number;
+  max_slots_per_time: number;
+  reservations_open: boolean;
+  volunteers_open: boolean;
+  price_buiten_wassen: number;
+  price_compleet: number;
+  notify_email: string | null;
+  internal_notes: string | null;
+}
+
 export interface Database {
   public: {
     Tables: {

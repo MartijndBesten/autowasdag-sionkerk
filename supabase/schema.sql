@@ -410,3 +410,47 @@ end $$;
 
 create index if not exists idx_volunteer_planning_status
   on public.volunteer_signups (planning_status);
+
+-- ── Acties (actieronden / meerdere jaren) ────────────────────────────────────
+
+create table if not exists public.actions (
+  id                   uuid        primary key default uuid_generate_v4(),
+  name                 text        not null,
+  is_active            boolean     not null default false,
+  is_archived          boolean     not null default false,
+  created_at           timestamptz not null default now(),
+  event_date           date,
+  start_time           time        not null default '09:00',
+  end_time             time        not null default '16:00',
+  wash_bays            int         not null default 2,
+  max_slots_per_time   int         not null default 2,
+  reservations_open    boolean     not null default true,
+  volunteers_open      boolean     not null default true,
+  price_buiten_wassen  numeric(6,2) not null default 7.50,
+  price_compleet       numeric(6,2) not null default 12.50,
+  notify_email         text,
+  internal_notes       text
+);
+
+alter table public.car_reservations  add column if not exists action_id uuid references public.actions(id);
+alter table public.volunteer_signups add column if not exists action_id uuid references public.actions(id);
+
+alter table public.actions enable row level security;
+
+drop policy if exists "public_read_active_action"  on public.actions;
+drop policy if exists "admin_all_actions"           on public.actions;
+
+-- Bezoekers mogen de actieve, niet-gearchiveerde actie lezen (voor datum/tijden)
+create policy "public_read_active_action"
+  on public.actions for select
+  to anon, authenticated
+  using (is_active = true and is_archived = false);
+
+-- Admins kunnen alles
+create policy "admin_all_actions"
+  on public.actions for all
+  to authenticated
+  using (public.is_admin())
+  with check (public.is_admin());
+
+create index if not exists idx_actions_active on public.actions (is_active);
