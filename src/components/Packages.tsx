@@ -90,7 +90,7 @@ export default function Packages() {
           <div className="flex items-start gap-3 px-5 py-4 rounded-xl bg-amber-50/70 border border-amber-100">
             <span className="text-lg flex-shrink-0">☕</span>
             <p className="text-green-800 text-sm">
-              <strong>Inbegrepen bij elk pakket:</strong> gratis koffie, gebak en gezelligheid — ook voor chauffeurs die op iemand wachten.
+              <strong>Laat je reservering zien en ontvang een gratis bakje koffie.</strong> Gebak en andere lekkernijen zijn verkrijgbaar tijdens de actiedag.
             </p>
           </div>
           <div className="flex items-start gap-3 px-5 py-4 rounded-xl bg-gold-100/60 border border-gold-200/60">

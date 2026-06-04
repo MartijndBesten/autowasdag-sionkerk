@@ -13,9 +13,9 @@ const steps = [
   },
   {
     number: "03",
-    title: "Gratis koffie en gebak inbegrepen",
+    title: "Gratis koffie bij je reservering",
     description:
-      "Terwijl de jongeren aan de slag gaan, staat er koffie, thee en vers gebak voor u klaar — gratis bij elke wasbeurt.",
+      "Laat je reservering zien en ontvang een gratis bakje koffie. Gebak en andere lekkernijen zijn verkrijgbaar tijdens de actiedag.",
   },
   {
     number: "04",
@@ -41,7 +41,7 @@ const timeline = [
   {
     time: "10:00",
     title: "Koffie & gebak",
-    desc: "Gratis koffie, thee en vers gebak — de hele dag beschikbaar.",
+    desc: "Gratis koffie bij je reservering. Gebak en lekkernijen zijn verkrijgbaar.",
     accent: "bg-amber-100 text-amber-700 border-amber-200",
     mobileAccent: "bg-amber-100 text-amber-700",
     icon: (
@@ -113,7 +113,7 @@ export default function HowItWorks() {
           <div className="px-6 sm:px-10 pt-7 pb-2">
             <p className="label-small">Tijdlijn op de dag</p>
             <p className="mt-1 text-green-800/50 text-sm">
-              Koffie &amp; gebak zijn <em>gratis</em> en de <em>hele dag</em> beschikbaar.
+              Laat je reservering zien voor een <em>gratis koffie</em>. Gebak en snacks zijn verkrijgbaar.
             </p>
           </div>
 

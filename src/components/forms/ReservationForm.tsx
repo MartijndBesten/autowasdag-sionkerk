@@ -110,7 +110,7 @@ export default function ReservationForm() {
           ? <><svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>Bezig…</>
           : "Reserveer nu →"}
       </button>
-      <p className="text-xs text-center text-gray-400">☕ Gratis koffie en gebak inbegrepen bij elk bezoek</p>
+      <p className="text-xs text-center text-gray-400">☕ Gratis koffie bij je reservering · gebak en lekkernijen verkrijgbaar op de dag</p>
     </form>
   );
 }

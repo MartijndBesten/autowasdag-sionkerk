@@ -7,8 +7,8 @@ const activities = [
     id: "koffie",
     title: "Koffie & gebak",
     description:
-      "Zit gezellig bij een kop koffie of thee terwijl je auto wordt gewassen. Gratis koffie, thee en vers gebak — inbegrepen bij elke wasbeurt.",
-    tag: "Inbegrepen",
+      "Laat je reservering zien bij binnenkomst en ontvang een gratis bakje koffie. Vers gebak en andere lekkernijen zijn verkrijgbaar tijdens de actiedag.",
+    tag: "Koffie gratis",
     tagColor: "text-green-700 bg-green-50 border-green-200",
     bgPlaceholder: "bg-amber-50",
     iconColor: "text-amber-400",
