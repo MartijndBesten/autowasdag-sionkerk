@@ -85,6 +85,13 @@ function shiftLabel(s: VolunteerSignup): string {
   return SHIFT_OPTIONS.find(o => o.value === s.final_shift)?.label ?? s.final_shift;
 }
 
+const COST_LABELS: Record<string, string> = {
+  eigen_kosten:       "Eigen kosten",
+  vergoeding_gewenst: "Vergoeding gewenst",
+  gesponsord:         "Gesponsord",
+  weet_ik_nog_niet:   "Weet ik nog niet",
+};
+
 function parseContrib(details: string | null, key: string): string | null {
   if (!details) return null;
   const line = details.split("\n").find(l => l.toLowerCase().startsWith(key.toLowerCase() + ":"));
@@ -355,6 +362,11 @@ export default function VrijwilligersClient({ initialRows }: { initialRows: Volu
                         {r.contribution_details && (
                           <p className="text-xs text-gray-400 mt-1 max-w-xs">{r.contribution_details}</p>
                         )}
+                        {r.cost_preference && (
+                          <span className={`inline-block mt-1 text-xs font-medium px-1.5 py-0.5 rounded ${r.cost_preference === "vergoeding_gewenst" ? "bg-amber-100 text-amber-700" : "bg-stone-100 text-stone-500"}`}>
+                            {COST_LABELS[r.cost_preference] ?? r.cost_preference}
+                          </span>
+                        )}
                         {r.notes && <p className="text-xs text-gray-300 mt-0.5 italic">{r.notes}</p>}
                       </td>
                       <td className="px-4 py-3">
@@ -471,7 +483,7 @@ export default function VrijwilligersClient({ initialRows }: { initialRows: Volu
             <table className="w-full text-sm">
               <thead className="bg-gray-50 border-b border-stone-100">
                 <tr>
-                  {["Naam","Telefoon","Wat wordt gebakken","Status","Interne notitie","Acties"].map(h => (
+                  {["Naam","Telefoon","Wat wordt gebakken","Kosten/gesponsord","Status","Interne notitie","Acties"].map(h => (
                     <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">{h}</th>
                   ))}
                 </tr>
@@ -486,6 +498,13 @@ export default function VrijwilligersClient({ initialRows }: { initialRows: Volu
                     <td className="px-4 py-3 text-xs text-gray-500">{r.phone ?? "—"}</td>
                     <td className="px-4 py-3 text-xs text-gray-600 max-w-xs">{parseContrib(r.contribution_details, "Bakken") ?? "—"}</td>
                     <td className="px-4 py-3">
+                      {r.cost_preference ? (
+                        <span className={`inline-block text-xs font-semibold px-2 py-0.5 rounded-full ${r.cost_preference === "vergoeding_gewenst" ? "bg-amber-100 text-amber-800" : "bg-stone-100 text-stone-600"}`}>
+                          {COST_LABELS[r.cost_preference] ?? r.cost_preference}
+                        </span>
+                      ) : <span className="text-gray-300 text-xs">—</span>}
+                    </td>
+                    <td className="px-4 py-3">
                       <span className={`inline-block text-xs font-semibold px-2 py-0.5 rounded-full ${STATUS_BADGE[r.planning_status ?? "new"] ?? ""}`}>
                         {STATUS_LABEL[r.planning_status ?? "new"]}
                       </span>
@@ -497,7 +516,7 @@ export default function VrijwilligersClient({ initialRows }: { initialRows: Volu
                   </tr>
                 ))}
                 {bakkers.length === 0 && (
-                  <tr><td colSpan={6} className="px-4 py-8 text-center text-gray-400">Geen bakkers gevonden</td></tr>
+                  <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-400">Geen bakkers gevonden</td></tr>
                 )}
               </tbody>
             </table>

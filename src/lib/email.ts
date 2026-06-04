@@ -202,6 +202,13 @@ const SHIFT_LABELS: Record<string, string> = {
 
 // ── Organisatiemail bij nieuwe vrijwilligersaanmelding ───────────────────────
 
+const COST_LABELS: Record<string, string> = {
+  eigen_kosten:       "Eigen kosten",
+  vergoeding_gewenst: "Vergoeding gewenst",
+  gesponsord:         "Gesponsord",
+  weet_ik_nog_niet:   "Weet ik nog niet",
+};
+
 export async function sendVolunteerEmail(data: {
   name: string;
   email: string;
@@ -209,6 +216,7 @@ export async function sendVolunteerEmail(data: {
   availability: string;
   tasks: string[];
   contribution_details: string | null;
+  cost_preference: string | null;
   notes: string | null;
 }): Promise<SendResult> {
   const html = buildHtml({
@@ -221,6 +229,7 @@ export async function sendVolunteerEmail(data: {
       ["Opgegeven voorkeuren",  data.tasks.map(t => TASK_LABELS[t] ?? t).join(", ") || "—"],
       ["Beschikbaarheid",       AVAIL_LABELS[data.availability] ?? data.availability],
       ["Extra informatie",      data.contribution_details],
+      ["Kosten bakken",         data.cost_preference ? (COST_LABELS[data.cost_preference] ?? data.cost_preference) : null],
       ["Opmerking deelnemer",   data.notes],
       ["",                      "Let op: deze persoon is nog niet definitief ingepland. Deel deze persoon in via de vrijwilligersbackend."],
       ["Ingediend op",          now()],
@@ -239,6 +248,7 @@ export async function sendVolunteerConfirmation(data: {
   availability: string;
   tasks: string[];
   contribution_details: string | null;
+  cost_preference: string | null;
 }): Promise<SendResult> {
   const html = buildHtml({
     typeLabel:   "Bedankt voor je aanmelding",
@@ -248,6 +258,7 @@ export async function sendVolunteerConfirmation(data: {
       ["Opgegeven voorkeuren", data.tasks.map(t => TASK_LABELS[t] ?? t).join(", ") || "—"],
       ["Beschikbaarheid",      AVAIL_LABELS[data.availability] ?? data.availability],
       ["Extra informatie",     data.contribution_details],
+      ["Kosten bakken",        data.cost_preference ? (COST_LABELS[data.cost_preference] ?? data.cost_preference) : null],
       ["",                     "De organisatie maakt later de definitieve indeling. Je ontvangt nog bericht waar en wanneer je precies wordt ingepland."],
     ],
     timestamp: now(),

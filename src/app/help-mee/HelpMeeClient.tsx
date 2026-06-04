@@ -38,16 +38,33 @@ const AVAIL_OPTIONS = [
   { value: "afternoon", label: "Middag",    sub: "12:30 – 16:00" },
 ];
 
+const COST_OPTIONS = [
+  { value: "",                  label: "— Kies een optie —" },
+  { value: "eigen_kosten",      label: "Ik betaal de ingrediënten zelf" },
+  { value: "vergoeding_gewenst",label: "Ik zou graag een vergoeding willen" },
+  { value: "gesponsord",        label: "De kosten worden gesponsord" },
+  { value: "weet_ik_nog_niet",  label: "Weet ik nog niet" },
+];
+
+const COST_LABELS: Record<string, string> = {
+  eigen_kosten:       "Eigen kosten",
+  vergoeding_gewenst: "Vergoeding gewenst",
+  gesponsord:         "Gesponsord",
+  weet_ik_nog_niet:   "Weet ik nog niet",
+};
+
 const fieldCls = "w-full border border-stone-200 bg-white rounded-xl px-4 py-3 text-sm text-green-950 placeholder-gray-300 focus:outline-none focus:border-green-600 focus:ring-1 focus:ring-green-600 transition-colors";
 const labelCls = "block text-xs font-semibold text-green-700 uppercase tracking-wider mb-1.5";
+const reqStar  = <span className="text-red-400 ml-1">*</span>;
 
 export default function HelpMeeClient({ dateFormatted }: { dateFormatted: string }) {
-  const [selected,     setSelected]     = useState<string[]>([]);
-  const [availability, setAvailability] = useState("full_day");
-  const [form,         setForm]         = useState({ name: "", email: "", phone: "", notes: "" });
-  const [details,      setDetails]      = useState({ bakken: "", spullen: "", sponsoring: "" });
-  const [status,       setStatus]       = useState<"idle" | "loading" | "success" | "error">("idle");
-  const [errorMsg,     setErrorMsg]     = useState("");
+  const [selected,       setSelected]       = useState<string[]>([]);
+  const [availability,   setAvailability]   = useState("full_day");
+  const [form,           setForm]           = useState({ name: "", email: "", phone: "", notes: "" });
+  const [details,        setDetails]        = useState({ bakken: "", spullen: "", sponsoring: "" });
+  const [costPreference, setCostPreference] = useState("");
+  const [status,         setStatus]         = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [errorMsg,       setErrorMsg]       = useState("");
 
   function toggle(id: string) {
     setSelected(p => p.includes(id) ? p.filter(r => r !== id) : [...p, id]);
@@ -63,8 +80,21 @@ export default function HelpMeeClient({ dateFormatted }: { dateFormatted: string
     return parts.length ? parts.join("\n") : null;
   }
 
+  function clientValidate(): string | null {
+    if (selected.includes("bakken")) {
+      if (!details.bakken.trim())  return "Vul in wat je gaat bakken.";
+      if (!costPreference)         return "Geef aan hoe de kosten van het bakken worden gedekt.";
+    }
+    if (selected.includes("spullen")    && !details.spullen.trim())    return "Vul in welke spullen je meeneemt.";
+    if (selected.includes("sponsoring") && !details.sponsoring.trim()) return "Vul in hoe je wilt bijdragen als sponsor/verkoper.";
+    return null;
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    const validationError = clientValidate();
+    if (validationError) { setErrorMsg(validationError); return; }
+
     setStatus("loading");
     setErrorMsg("");
     try {
@@ -78,6 +108,7 @@ export default function HelpMeeClient({ dateFormatted }: { dateFormatted: string
           availability,
           tasks:                selected.length ? selected : ["onbekend"],
           contribution_details: buildContributionDetails(),
+          cost_preference:      selected.includes("bakken") ? costPreference : null,
           notes:                form.notes || null,
         }),
       });
@@ -92,12 +123,10 @@ export default function HelpMeeClient({ dateFormatted }: { dateFormatted: string
 
   // ── Succes ──────────────────────────────────────────────────────────────────
   if (status === "success") {
-    const chosenLabels = selected
-      .map(id => allOptions.find(o => o.id === id))
-      .filter(Boolean)
-      .map(o => `${o!.emoji} ${o!.title}`);
+    const chosenLabels  = selected.map(id => allOptions.find(o => o.id === id)).filter(Boolean).map(o => `${o!.emoji} ${o!.title}`);
     const contribDetails = buildContributionDetails();
-    const availLabel = AVAIL_OPTIONS.find(a => a.value === availability)?.label ?? availability;
+    const availLabel    = AVAIL_OPTIONS.find(a => a.value === availability)?.label ?? availability;
+    const costLabel     = costPreference ? COST_LABELS[costPreference] : null;
 
     return (
       <div className="max-w-md mx-auto px-4 pt-28 pb-20 text-center">
@@ -122,6 +151,12 @@ export default function HelpMeeClient({ dateFormatted }: { dateFormatted: string
               {contribDetails.split("\n").map((line, i) => (
                 <p key={i} className="text-sm text-gray-600">{line}</p>
               ))}
+            </div>
+          )}
+          {costLabel && (
+            <div>
+              <p className="text-xs font-semibold text-green-600 uppercase tracking-wider mb-1">Kosten bakken</p>
+              <p className="text-sm text-gray-600">{costLabel}</p>
             </div>
           )}
           <div>
@@ -216,35 +251,49 @@ export default function HelpMeeClient({ dateFormatted }: { dateFormatted: string
           </p>
         )}
 
-        {/* Conditionele detailvelden */}
+        {/* Verplichte detailvelden per geselecteerde bijdrageoptie */}
         {showDetails && (
-          <div className="rounded-2xl bg-stone-50 border border-stone-100 p-4 space-y-4">
-            <p className="text-xs font-semibold text-green-600 uppercase tracking-wider">Vertel ons iets meer</p>
+          <div className="rounded-2xl bg-stone-50 border border-stone-100 p-4 space-y-5">
+            <p className="text-xs font-semibold text-green-600 uppercase tracking-wider">
+              Vertel ons meer — deze velden zijn verplicht
+            </p>
 
             {selected.includes("bakken") && (
-              <div>
-                <label className={labelCls}>Wat ga je bakken? <span className="text-gray-300 font-normal normal-case tracking-normal">(optioneel)</span></label>
-                <textarea rows={2} value={details.bakken} onChange={e => setDetail("bakken", e.target.value)}
-                  placeholder="bijv. appeltaart en koekjes, ca. 30 stuks"
-                  className={`${fieldCls} resize-none`} />
+              <div className="space-y-3">
+                <div>
+                  <label className={labelCls}>Wat ga je bakken? {reqStar}</label>
+                  <textarea rows={2} value={details.bakken} onChange={e => setDetail("bakken", e.target.value)}
+                    placeholder="bijv. appeltaart en koekjes, ca. 30 stuks"
+                    className={`${fieldCls} resize-none ${!details.bakken.trim() ? "border-rose-200" : ""}`} />
+                </div>
+                <div>
+                  <label className={labelCls}>Kosten ingrediënten {reqStar}</label>
+                  <select value={costPreference} onChange={e => setCostPreference(e.target.value)}
+                    className={`${fieldCls} ${!costPreference ? "border-rose-200 text-gray-400" : ""}`}>
+                    {COST_OPTIONS.map(o => (
+                      <option key={o.value} value={o.value} disabled={o.value === ""}>{o.label}</option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-gray-400 mt-1">Zo weet de organisatie of en hoe ze de kosten kunnen vergoeden.</p>
+                </div>
               </div>
             )}
 
             {selected.includes("spullen") && (
               <div>
-                <label className={labelCls}>Wat neem je mee? <span className="text-gray-300 font-normal normal-case tracking-normal">(optioneel)</span></label>
+                <label className={labelCls}>Wat neem je mee? {reqStar}</label>
                 <textarea rows={2} value={details.spullen} onChange={e => setDetail("spullen", e.target.value)}
-                  placeholder="bijv. 5 emmers en sponzen"
-                  className={`${fieldCls} resize-none`} />
+                  placeholder="bijv. 5 emmers, 10 sponzen en een jerrycan groene zeep"
+                  className={`${fieldCls} resize-none ${!details.spullen.trim() ? "border-rose-200" : ""}`} />
               </div>
             )}
 
             {selected.includes("sponsoring") && (
               <div>
-                <label className={labelCls}>Hoe wil je bijdragen? <span className="text-gray-300 font-normal normal-case tracking-normal">(optioneel)</span></label>
+                <label className={labelCls}>Hoe wil je bijdragen? {reqStar}</label>
                 <textarea rows={2} value={details.sponsoring} onChange={e => setDetail("sponsoring", e.target.value)}
-                  placeholder="bijv. frisdrank en chips namens Bakkerij De Vries"
-                  className={`${fieldCls} resize-none`} />
+                  placeholder="bijv. frisdrank en chips namens Bakkerij De Vries, ca. 60 blikjes"
+                  className={`${fieldCls} resize-none ${!details.sponsoring.trim() ? "border-rose-200" : ""}`} />
               </div>
             )}
           </div>
@@ -273,12 +322,12 @@ export default function HelpMeeClient({ dateFormatted }: { dateFormatted: string
         <div className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className={labelCls}>Naam <span className="text-red-400">*</span></label>
+              <label className={labelCls}>Naam {reqStar}</label>
               <input required value={form.name} onChange={e => set("name", e.target.value)}
                 placeholder="Hoe mogen we je noemen?" className={fieldCls} />
             </div>
             <div>
-              <label className={labelCls}>E-mail <span className="text-red-400">*</span></label>
+              <label className={labelCls}>E-mail {reqStar}</label>
               <input type="email" required value={form.email} onChange={e => set("email", e.target.value)}
                 placeholder="jouw@email.nl" className={fieldCls} />
             </div>
@@ -296,7 +345,9 @@ export default function HelpMeeClient({ dateFormatted }: { dateFormatted: string
           </div>
         </div>
 
-        {status === "error" && <p className="text-red-500 text-sm">{errorMsg}</p>}
+        {errorMsg && (
+          <p className="text-red-500 text-sm bg-red-50 border border-red-200 rounded-xl px-4 py-2">{errorMsg}</p>
+        )}
 
         <button type="submit" disabled={status === "loading" || !form.name || !form.email}
           className="w-full bg-green-800 text-white font-semibold text-base rounded-full py-4 hover:bg-green-900 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2">
