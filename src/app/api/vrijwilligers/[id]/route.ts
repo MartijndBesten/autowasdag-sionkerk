@@ -2,6 +2,34 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
+export async function DELETE(
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+
+    const sessionClient = await createClient();
+    const { data: { user } } = await sessionClient.auth.getUser();
+    if (!user) return NextResponse.json({ error: "Niet ingelogd." }, { status: 401 });
+    const { data: adminUser } = await sessionClient.from("admin_users")
+      .select("id").eq("id", user.id).eq("is_active", true).single();
+    if (!adminUser) return NextResponse.json({ error: "Geen toegang." }, { status: 403 });
+
+    const supabase = createAdminClient() as any;
+    const { error } = await supabase
+      .from("volunteer_signups")
+      .update({ is_deleted: true, updated_at: new Date().toISOString() })
+      .eq("id", id);
+
+    if (error) throw error;
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    console.error("[api/vrijwilligers/[id] DELETE]", err);
+    return NextResponse.json({ error: "Interne fout." }, { status: 500 });
+  }
+}
+
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }

@@ -123,10 +123,14 @@ export default function VrijwilligersClient({ initialRows }: { initialRows: Volu
     final_start_time: "", final_end_time: "",
     internal_note: "", planning_status: "new",
   });
-  const [saving,       setSaving]       = useState(false);
-  const [emailSending, setEmailSending] = useState<string | null>(null);
-  const [emailError,   setEmailError]   = useState<string | null>(null);
-  const [saveError,    setSaveError]    = useState<string | null>(null);
+  const [saving,         setSaving]         = useState(false);
+  const [emailSending,   setEmailSending]   = useState<string | null>(null);
+  const [emailError,     setEmailError]     = useState<string | null>(null);
+  const [saveError,      setSaveError]      = useState<string | null>(null);
+  const [deleteConfirm,  setDeleteConfirm]  = useState<VolunteerSignup | null>(null);
+  const [deleting,       setDeleting]       = useState(false);
+  const [deleteError,    setDeleteError]    = useState<string | null>(null);
+  const [deleteSuccess,  setDeleteSuccess]  = useState<string | null>(null);
 
   // Filters
   const [fStatus,      setFStatus]      = useState("");
@@ -177,6 +181,22 @@ export default function VrijwilligersClient({ initialRows }: { initialRows: Volu
       setSaveError(err instanceof Error ? err.message : "Opslaan mislukt.");
     }
     setSaving(false);
+  }
+
+  async function handleDelete() {
+    if (!deleteConfirm) return;
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      const res = await fetch(`/api/vrijwilligers/${deleteConfirm.id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error((await res.json()).error ?? "Fout");
+      setRows(rows.filter(r => r.id !== deleteConfirm.id));
+      setDeleteSuccess(`${deleteConfirm.full_name} is verwijderd.`);
+      setDeleteConfirm(null);
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : "Verwijderen mislukt.");
+    }
+    setDeleting(false);
   }
 
   async function handleSendEmail(v: VolunteerSignup) {
@@ -269,6 +289,20 @@ export default function VrijwilligersClient({ initialRows }: { initialRows: Volu
         <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-2 text-red-600 text-sm flex items-center justify-between">
           {emailError}
           <button onClick={() => setEmailError(null)} className="ml-4 text-red-400 hover:text-red-700">✕</button>
+        </div>
+      )}
+
+      {deleteSuccess && (
+        <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-2 text-green-700 text-sm flex items-center justify-between">
+          {deleteSuccess}
+          <button onClick={() => setDeleteSuccess(null)} className="ml-4 text-green-400 hover:text-green-700">✕</button>
+        </div>
+      )}
+
+      {deleteError && (
+        <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-2 text-red-600 text-sm flex items-center justify-between">
+          {deleteError}
+          <button onClick={() => setDeleteError(null)} className="ml-4 text-red-400 hover:text-red-700">✕</button>
         </div>
       )}
 
@@ -404,7 +438,7 @@ export default function VrijwilligersClient({ initialRows }: { initialRows: Volu
                         {new Date(r.created_at).toLocaleDateString("nl-NL")}
                       </td>
                       <td className="px-4 py-3">
-                        <div className="flex gap-2 whitespace-nowrap">
+                        <div className="flex gap-2 whitespace-nowrap flex-wrap">
                           <button onClick={() => openEdit(r)}
                             className="text-xs bg-green-50 text-green-700 border border-green-200 px-3 py-1.5 rounded-lg hover:bg-green-100 transition-colors">
                             Indelen
@@ -414,6 +448,11 @@ export default function VrijwilligersClient({ initialRows }: { initialRows: Volu
                             disabled={emailSending === r.id}
                             className="text-xs bg-blue-50 text-blue-700 border border-blue-200 px-3 py-1.5 rounded-lg hover:bg-blue-100 transition-colors disabled:opacity-50">
                             {emailSending === r.id ? "…" : "✉ Indeling"}
+                          </button>
+                          <button
+                            onClick={() => setDeleteConfirm(r)}
+                            className="text-xs bg-red-50 text-red-600 border border-red-200 px-3 py-1.5 rounded-lg hover:bg-red-100 transition-colors">
+                            Verwijderen
                           </button>
                         </div>
                       </td>
@@ -571,6 +610,32 @@ export default function VrijwilligersClient({ initialRows }: { initialRows: Volu
                 )}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal: Verwijder bevestiging ─────────────────────────────────────── */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={e => { if (e.target === e.currentTarget) setDeleteConfirm(null); }}>
+          <div className="absolute inset-0 bg-black/40" />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-4">
+            <h2 className="font-bold text-gray-900 text-lg">Vrijwilliger verwijderen</h2>
+            <p className="text-gray-600 text-sm">
+              Weet u zeker dat u <strong>{deleteConfirm.full_name}</strong> uit de lijst wilt verwijderen?
+            </p>
+            {deleteError && (
+              <p className="text-red-500 text-sm bg-red-50 border border-red-200 rounded-xl px-4 py-2">{deleteError}</p>
+            )}
+            <div className="flex gap-3 pt-2">
+              <button onClick={handleDelete} disabled={deleting}
+                className="flex-1 bg-red-600 text-white font-semibold rounded-full py-2.5 hover:bg-red-700 transition-colors disabled:opacity-50">
+                {deleting ? "Verwijderen…" : "Ja, verwijderen"}
+              </button>
+              <button onClick={() => { setDeleteConfirm(null); setDeleteError(null); }}
+                className="flex-1 border border-stone-200 rounded-full py-2.5 text-gray-600 hover:bg-stone-50 transition-colors text-sm">
+                Annuleren
+              </button>
+            </div>
           </div>
         </div>
       )}

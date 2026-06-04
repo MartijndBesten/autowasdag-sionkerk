@@ -56,6 +56,7 @@ export interface VolunteerSignup {
   planning_status: PlanningStatus;
   assignment_email_sent: boolean;
   assignment_email_sent_at: string | null;
+  is_deleted: boolean;
 }
 
 export interface ContributionSignup {

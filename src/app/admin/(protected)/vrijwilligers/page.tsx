@@ -7,6 +7,7 @@ export default async function VrijwilligersPage() {
   const { data } = await supabase
     .from("volunteer_signups")
     .select("*")
+    .eq("is_deleted", false)
     .order("created_at", { ascending: false });
 
   const rows = (data ?? []) as VolunteerSignup[];

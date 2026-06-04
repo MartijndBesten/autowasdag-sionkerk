@@ -68,6 +68,7 @@ create table if not exists public.volunteer_signups (
   notes                text,
   admin_notes          text,
   status               text        not null default 'pending',
+  is_deleted           boolean     not null default false,
   constraint chk_volunteer_availability
     check (availability in ('full_day', 'morning', 'afternoon')),
   constraint chk_volunteer_status
