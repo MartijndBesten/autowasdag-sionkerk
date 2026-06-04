@@ -22,7 +22,7 @@ values (
     'location_maps_url',    null,
     'hero_title',           'Autowasdag',
     'hero_subtitle',        'Sionkerk Houten',
-    'hero_description',     'Laat je auto wassen door de jongeren van de Sionkerk, geniet van koffie en gezelligheid en steun het opknappen van de zalen.',
+    'hero_description',     'Laat uw auto wassen door de jongeren van de Sionkerk, geniet van koffie en gezelligheid en steun het opknappen van de zalen van de kerk!',
     'hero_image_path',      '/images/hero.jpg',
     'action_tagline',       'Sionkerk Houten · Jeugdclubs actie',
     'coffee_text',          'Laat uw reservering zien en ontvang een gratis bakje koffie. Gebak en andere lekkernijen zijn verkrijgbaar tijdens de actiedag.',
