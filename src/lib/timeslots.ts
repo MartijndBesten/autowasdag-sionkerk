@@ -3,7 +3,6 @@ import type { PackageType } from "./supabase/types";
 export const SLOT_DURATION = 20; // minuten
 export const PACKAGE_SLOTS: Record<PackageType, number> = {
   buiten_wassen: 1,
-  binnen_zuigen: 1,
   compleet:      2,
 };
 

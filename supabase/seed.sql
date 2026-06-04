@@ -19,7 +19,6 @@ insert into public.settings (key, value) values
   'prices',
   '{
     "buiten_wassen": 7.50,
-    "binnen_zuigen": 7.50,
     "compleet": 12.50
   }'::jsonb
 ),

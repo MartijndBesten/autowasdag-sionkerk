@@ -107,7 +107,6 @@ export async function sendReservationEmail(data: {
 }): Promise<SendResult> {
   const packageLabels: Record<string, string> = {
     buiten_wassen: "Buiten wassen — €7,50",
-    binnen_zuigen: "Binnen zuigen — €7,50",
     compleet:      "Compleet (buiten + binnen) — €12,50",
     basis:         "Basis (buitenwas)",
   };
@@ -140,7 +139,6 @@ export async function sendReservationConfirmation(data: {
 }): Promise<SendResult> {
   const packageLabels: Record<string, string> = {
     buiten_wassen: "Buiten wassen",
-    binnen_zuigen: "Binnen zuigen",
     compleet:      "Compleet (buiten + binnen)",
   };
 

@@ -4,11 +4,11 @@ import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 interface EventSettings { date: string; start_time: string; end_time: string; wash_bays: number; reservations_open: boolean; volunteers_open: boolean; }
-interface PriceSettings { buiten_wassen: number; binnen_zuigen: number; compleet: number; }
+interface PriceSettings { buiten_wassen: number; compleet: number; }
 
 export default function InstellingenClient({ initialSettings }: { initialSettings: Record<string, unknown> }) {
   const ev0 = (initialSettings.event   as EventSettings) ?? { date:"", start_time:"09:00", end_time:"16:00", wash_bays:2, reservations_open:true, volunteers_open:true };
-  const pr0 = (initialSettings.prices  as PriceSettings) ?? { buiten_wassen:5, binnen_zuigen:5, compleet:10 };
+  const pr0 = (initialSettings.prices  as PriceSettings) ?? { buiten_wassen:7.50, compleet:12.50 };
 
   const [event,  setEvent]  = useState<EventSettings>(ev0);
   const [prices, setPrices] = useState<PriceSettings>(pr0);
@@ -82,10 +82,9 @@ export default function InstellingenClient({ initialSettings }: { initialSetting
       {/* Prijzen */}
       <div className="bg-white rounded-2xl shadow-sm border border-stone-100 p-6 space-y-4">
         <h2 className="font-semibold text-gray-900">Prijzen (€)</h2>
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 gap-4">
           {[
             { key: "buiten_wassen", label: "Buiten wassen" },
-            { key: "binnen_zuigen", label: "Binnen zuigen" },
             { key: "compleet",      label: "Compleet" },
           ].map(({ key, label }) => (
             <div key={key}>

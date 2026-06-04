@@ -40,7 +40,7 @@ create table if not exists public.car_reservations (
   cancellation_token uuid                  default uuid_generate_v4(),
   slot_count         int          not null default 1,
   constraint chk_car_package_type
-    check (package_type in ('buiten_wassen', 'binnen_zuigen', 'compleet')),
+    check (package_type in ('buiten_wassen', 'compleet')),
   constraint chk_car_payment_status
     check (payment_status in ('unpaid', 'paid_cash', 'paid_qr', 'donated_extra')),
   constraint chk_car_status

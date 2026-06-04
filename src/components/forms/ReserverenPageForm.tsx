@@ -6,10 +6,9 @@ import type { PackageType } from "@/lib/supabase/types";
 import type { AvailableSlot } from "@/lib/timeslots";
 import { formatEventDate } from "@/lib/event";
 
-const PACKAGE_OPTIONS: { value: PackageType; label: string; duration: string }[] = [
-  { value: "buiten_wassen", label: "Buiten wassen",      duration: "± 20 min" },
-  { value: "binnen_zuigen", label: "Binnen zuigen",      duration: "± 20 min" },
-  { value: "compleet",      label: "Compleet (buiten + binnen)", duration: "± 40 min" },
+const PACKAGE_OPTIONS: { value: PackageType; label: string; duration: string; price: string }[] = [
+  { value: "buiten_wassen", label: "Buiten wassen",             duration: "± 20 min", price: "€7,50" },
+  { value: "compleet",      label: "Compleet (buiten + binnen)", duration: "± 40 min", price: "€12,50" },
 ];
 
 export default function ReserverenPageForm({ eventDate }: { eventDate: string }) {
@@ -118,7 +117,7 @@ export default function ReserverenPageForm({ eventDate }: { eventDate: string })
                   onChange={() => set("package_type", p.value)} className="sr-only" />
                 <span className={`text-sm font-medium ${form.package_type === p.value ? "text-green-800" : "text-gray-600"}`}>{p.label}</span>
               </div>
-              <span className="text-xs text-gray-400 flex-shrink-0">{p.duration}</span>
+              <span className="text-xs text-gray-400 flex-shrink-0">{p.price} · {p.duration}</span>
             </label>
           ))}
         </div>

@@ -4,7 +4,7 @@ import { sendReservationEmail, sendReservationConfirmation } from "@/lib/email";
 import { PACKAGE_SLOTS } from "@/lib/timeslots";
 import type { PackageType } from "@/lib/supabase/types";
 
-const VALID_PACKAGES: PackageType[] = ["buiten_wassen", "binnen_zuigen", "compleet"];
+const VALID_PACKAGES: PackageType[] = ["buiten_wassen", "compleet"];
 
 function addMinutes(time: string, minutes: number): string {
   const [h, m] = time.split(":").map(Number);

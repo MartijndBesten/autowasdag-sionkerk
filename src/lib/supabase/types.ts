@@ -1,6 +1,6 @@
 // Supabase database type definitions
 
-export type PackageType   = "buiten_wassen" | "binnen_zuigen" | "compleet";
+export type PackageType   = "buiten_wassen" | "compleet";
 export type ReservationStatus = "pending" | "confirmed" | "completed" | "cancelled";
 export type PaymentStatus = "unpaid" | "paid_cash" | "paid_qr" | "donated_extra";
 export type VolunteerStatus  = "pending" | "confirmed" | "cancelled";
@@ -86,7 +86,6 @@ export interface EventSettings {
 
 export interface PriceSettings {
   buiten_wassen: number;
-  binnen_zuigen: number;
   compleet: number;
 }
 
