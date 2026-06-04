@@ -5,9 +5,8 @@ import type { PackageType } from "@/lib/types";
 import { useModal } from "@/context/ModalContext";
 
 const packageLabels: Record<PackageType, string> = {
-  basis:    "Basis — €5",
-  compleet: "Compleet — €10",
-  deluxe:   "Deluxe — €15",
+  buiten_wassen: "Buiten wassen — €7,50",
+  compleet:      "Compleet — €12,50",
 };
 
 export default function ReservationForm() {
@@ -32,8 +31,13 @@ export default function ReservationForm() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: form.name, email: form.email,
-          phone: form.phone || null, package: form.package, notes: form.notes || null,
+          full_name:        form.name,
+          email:            form.email,
+          phone:            form.phone || null,
+          package_type:     form.package,
+          reservation_date: "",
+          reservation_time: "",
+          notes:            form.notes || null,
         }),
       });
       const json = await res.json();
@@ -66,7 +70,7 @@ export default function ReservationForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
-      <p className="text-gray-400 text-sm">Vul je gegevens in en kies je pakket.</p>
+      <p className="text-gray-400 text-sm">Vul je gegevens in en kies je pakket. Betaling ter plaatse.</p>
       <div>
         <label className={lbl}>Naam <span className="text-red-400">*</span></label>
         <input required value={form.name} onChange={e => set("name", e.target.value)}
@@ -84,7 +88,7 @@ export default function ReservationForm() {
       </div>
       <div>
         <label className={lbl}>Pakket <span className="text-red-400">*</span></label>
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 gap-2">
           {(Object.entries(packageLabels) as [PackageType, string][]).map(([value, label]) => (
             <label key={value} className={`cursor-pointer rounded-xl border-2 px-3 py-3 text-center text-xs font-semibold transition-colors ${form.package === value ? "border-green-700 bg-green-50 text-green-800" : "border-stone-200 text-gray-500 hover:border-green-300"}`}>
               <input type="radio" name="package" value={value} checked={form.package === value}
@@ -104,8 +108,9 @@ export default function ReservationForm() {
         className="btn-primary w-full justify-center flex items-center gap-2">
         {status === "loading"
           ? <><svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>Bezig…</>
-          : "Reservering plaatsen"}
+          : "Reserveer nu →"}
       </button>
+      <p className="text-xs text-center text-gray-400">☕ Gratis koffie en gebak inbegrepen bij elk bezoek</p>
     </form>
   );
 }

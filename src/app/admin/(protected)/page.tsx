@@ -13,7 +13,7 @@ async function getStats(supabase: any) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const volunteers    = (vol.data  ?? []) as any[];
 
-  const prices: Record<string, number> = { buiten_wassen: 5, binnen_zuigen: 5, compleet: 10 };
+  const prices: Record<string, number> = { buiten_wassen: 7.5, binnen_zuigen: 7.5, compleet: 12.5 };
   const expected = reservations
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     .filter((r: any) => r.status !== "cancelled")

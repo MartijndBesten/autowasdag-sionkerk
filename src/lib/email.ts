@@ -106,9 +106,10 @@ export async function sendReservationEmail(data: {
   notes: string | null;
 }): Promise<SendResult> {
   const packageLabels: Record<string, string> = {
-    basis:    "Basis — buitenwas",
-    compleet: "Compleet — buiten én binnen",
-    deluxe:   "Deluxe — het volle werk",
+    buiten_wassen: "Buiten wassen — €7,50",
+    binnen_zuigen: "Binnen zuigen — €7,50",
+    compleet:      "Compleet (buiten + binnen) — €12,50",
+    basis:         "Basis (buitenwas)",
   };
 
   const html = buildHtml({

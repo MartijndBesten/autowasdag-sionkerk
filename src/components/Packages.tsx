@@ -1,47 +1,36 @@
 "use client";
 
 import Link from "next/link";
-import type { PackageType } from "@/lib/types";
 
 const packages: {
-  id: PackageType; name: string; price: number; tagline: string;
+  id: string; name: string; price: number; tagline: string;
   description: string; includes: string[];
-  variant: "light" | "featured" | "dark";
+  variant: "light" | "featured";
 }[] = [
   {
-    id: "basis",
-    name: "Basis",
-    price: 5,
+    id: "buiten_wassen",
+    name: "Buiten wassen",
+    price: 7.5,
     tagline: "Buitenwas",
-    description: "Een grondige handwas aan de buitenkant. Gespoeld, gezeefd en afgedroogd.",
+    description: "Een grondige handwas aan de buitenkant. Gespoeld, gezeemd en afgedroogd.",
     includes: ["Exterieur handwas", "Spoelen & afdrogen", "Ramen wassen"],
     variant: "light",
   },
   {
     id: "compleet",
     name: "Compleet",
-    price: 10,
+    price: 12.5,
     tagline: "Buiten én binnen",
     description: "Van buiten én van binnen helemaal fris. De meest gekozen bijdrage van de dag.",
-    includes: ["Buitenwas (zoals Basis)", "Interieurreinig", "Wielen poetsen"],
+    includes: ["Buitenwas (zoals Buitenwas)", "Interieur reinigen", "Wielen poetsen"],
     variant: "featured",
-  },
-  {
-    id: "deluxe",
-    name: "Deluxe",
-    price: 15,
-    tagline: "Het volle werk",
-    description: "Maximale glans én de grootste bijdrage aan de zalen.",
-    includes: ["Alles van Compleet", "Wax behandeling"],
-    variant: "dark",
   },
 ];
 
-type Variant = "light" | "featured" | "dark";
+type Variant = "light" | "featured";
 const styles: Record<Variant, { wrap: string; label: string; name: string; price: string; divider: string; desc: string; dot: string; item: string; btn: string }> = {
-  light:    { wrap: "bg-white border border-stone-100 shadow-[0_2px_12px_rgba(0,0,0,0.05)]",         label: "text-green-500",    name: "text-green-950", price: "text-green-900", divider: "bg-stone-100",      desc: "text-gray-400",       dot: "bg-green-400", item: "text-gray-600",      btn: "border-2 border-green-700 text-green-700 hover:bg-green-700 hover:text-white" },
-  featured: { wrap: "bg-green-700 shadow-[0_8px_32px_rgba(26,71,49,0.25)]",                          label: "text-green-300",    name: "text-white",     price: "text-white",     divider: "bg-green-600/50",   desc: "text-green-100/70",   dot: "bg-green-300", item: "text-green-100",    btn: "bg-white text-green-800 hover:bg-green-50" },
-  dark:     { wrap: "bg-green-950 border border-green-900 shadow-[0_2px_12px_rgba(0,0,0,0.12)]",    label: "text-green-500",    name: "text-white",     price: "text-white",     divider: "bg-green-900",     desc: "text-green-200/50",   dot: "bg-green-500", item: "text-green-200/80", btn: "border-2 border-green-600 text-green-300 hover:bg-green-800 hover:text-white" },
+  light:    { wrap: "bg-white border border-stone-100 shadow-[0_2px_12px_rgba(0,0,0,0.05)]",  label: "text-green-500",  name: "text-green-950", price: "text-green-900", divider: "bg-stone-100",    desc: "text-gray-400",     dot: "bg-green-400", item: "text-gray-600",   btn: "border-2 border-green-700 text-green-700 hover:bg-green-700 hover:text-white" },
+  featured: { wrap: "bg-green-700 shadow-[0_8px_32px_rgba(26,71,49,0.25)]",                   label: "text-green-300",  name: "text-white",     price: "text-white",     divider: "bg-green-600/50", desc: "text-green-100/70", dot: "bg-green-300", item: "text-green-100", btn: "bg-white text-green-800 hover:bg-green-50" },
 };
 
 export default function Packages() {
@@ -59,7 +48,7 @@ export default function Packages() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6 max-w-2xl mx-auto lg:max-w-none">
           {packages.map((pkg) => {
             const s = styles[pkg.variant];
             return (
@@ -75,7 +64,7 @@ export default function Packages() {
                     <h3 className={`text-xl font-bold ${s.name}`}>{pkg.name}</h3>
                   </div>
                   <div className="text-right flex-shrink-0">
-                    <span className={`text-[2.6rem] font-extrabold leading-none ${s.price}`}>€{pkg.price}</span>
+                    <span className={`text-[2.6rem] font-extrabold leading-none ${s.price}`}>€{pkg.price.toFixed(2).replace(".", ",")}</span>
                     <p className={`text-[10px] mt-1 ${s.label}`}>per auto</p>
                   </div>
                 </div>
@@ -97,13 +86,21 @@ export default function Packages() {
           })}
         </div>
 
-        <div className="mt-8 flex items-start gap-3 px-5 py-4 rounded-xl bg-gold-100/60 border border-gold-200/60">
-          <svg className="w-4 h-4 text-green-700 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <p className="text-green-800 text-sm">
-            <strong>Reserveren is handig</strong>, dan bent u zeker van een plek. Gewoon langskomen mag ook — dan plannen we u op de dag zelf in op een vrij moment.
-          </p>
+        <div className="mt-8 space-y-3">
+          <div className="flex items-start gap-3 px-5 py-4 rounded-xl bg-amber-50/70 border border-amber-100">
+            <span className="text-lg flex-shrink-0">☕</span>
+            <p className="text-green-800 text-sm">
+              <strong>Inbegrepen bij elk pakket:</strong> gratis koffie, gebak en gezelligheid — ook voor chauffeurs die op iemand wachten.
+            </p>
+          </div>
+          <div className="flex items-start gap-3 px-5 py-4 rounded-xl bg-gold-100/60 border border-gold-200/60">
+            <svg className="w-4 h-4 text-green-700 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <p className="text-green-800 text-sm">
+              <strong>Reserveren is handig</strong>, dan bent u zeker van een plek. Gewoon langskomen mag ook — dan plannen we u op de dag zelf in op een vrij moment.
+            </p>
+          </div>
         </div>
       </div>
     </section>

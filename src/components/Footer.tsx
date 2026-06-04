@@ -51,7 +51,7 @@ export default function Footer({ eventDate }: { eventDate: string }) {
               <div>
                 <p className="text-white font-semibold text-sm mb-4">Wasbeurten</p>
                 <ul className="space-y-2.5">
-                  {["Basis — €5", "Compleet — €10", "Deluxe — €15"].map((t) => (
+                  {["Buiten wassen — €7,50", "Compleet — €12,50"].map((t) => (
                     <li key={t}><a href="#pakketten" className="text-green-400/60 text-sm hover:text-green-300 transition-colors">{t}</a></li>
                   ))}
                 </ul>

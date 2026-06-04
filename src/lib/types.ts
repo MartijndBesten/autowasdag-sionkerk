@@ -1,6 +1,6 @@
 // ─── Shared enums ────────────────────────────────────────────────────────────
 
-export type PackageType = "basis" | "compleet" | "deluxe";
+export type PackageType = "buiten_wassen" | "compleet";
 export type AvailabilityType = "full_day" | "morning" | "afternoon";
 export type ContributionType = "financial" | "in_kind" | "services";
 export type StatusType = "pending" | "confirmed" | "completed" | "cancelled";
