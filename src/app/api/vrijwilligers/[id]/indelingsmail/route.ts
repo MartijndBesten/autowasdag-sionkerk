@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { sendAssignmentEmail } from "@/lib/email";
+import { formatEventDate } from "@/lib/event";
 import type { VolunteerSignup } from "@/lib/supabase/types";
 
 export async function POST(
@@ -41,6 +42,11 @@ export async function POST(
       }
     }
 
+    const { data: settings } = await supabase
+      .from("settings").select("value").eq("key", "sitecontent").single();
+    const eventDate: string | null = (settings?.value as Record<string, unknown>)?.event_date as string ?? null;
+    const eventDateFormatted = eventDate ? formatEventDate(eventDate) : null;
+
     const result = await sendAssignmentEmail({
       name:                 row.full_name,
       email:                row.email,
@@ -50,6 +56,7 @@ export async function POST(
       final_end_time:       row.final_end_time,
       contribution_details: row.contribution_details,
       cost_preference:      row.cost_preference,
+      event_date_formatted: eventDateFormatted,
     });
 
     if (!result.ok) {

@@ -292,6 +292,7 @@ export async function sendAssignmentEmail(data: {
   final_end_time: string | null;
   contribution_details: string | null;
   cost_preference: string | null;
+  event_date_formatted?: string | null;
 }): Promise<SendResult> {
   const taskLabel = data.final_tasks.map(t => TASK_LABELS[t] ?? t).join(", ") || "—";
 
@@ -306,6 +307,7 @@ export async function sendAssignmentEmail(data: {
   const sponsorDetail   = data.contribution_details?.split("\n").find(l => l.startsWith("Sponsoring:"))?.replace("Sponsoring:", "").trim() ?? null;
 
   const rows: [string, string | null | undefined][] = [
+    ["Datum",    data.event_date_formatted ?? null],
     ["Taak",     taskLabel],
     ["Tijd",     shiftLabel],
     ["Locatie",  "Eikenhout 221, Houten"],

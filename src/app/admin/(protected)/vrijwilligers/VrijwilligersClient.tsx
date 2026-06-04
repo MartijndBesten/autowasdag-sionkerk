@@ -125,6 +125,7 @@ export default function VrijwilligersClient({ initialRows }: { initialRows: Volu
   });
   const [saving,         setSaving]         = useState(false);
   const [emailSending,   setEmailSending]   = useState<string | null>(null);
+  const [bulkSending,    setBulkSending]    = useState<string | null>(null);
   const [emailError,     setEmailError]     = useState<string | null>(null);
   const [saveError,      setSaveError]      = useState<string | null>(null);
   const [deleteConfirm,  setDeleteConfirm]  = useState<VolunteerSignup | null>(null);
@@ -197,6 +198,35 @@ export default function VrijwilligersClient({ initialRows }: { initialRows: Volu
       setDeleteError(err instanceof Error ? err.message : "Verwijderen mislukt.");
     }
     setDeleting(false);
+  }
+
+  async function handleBulkSend(task: string, group: VolunteerSignup[]) {
+    const unsent = group.filter(v => !v.assignment_email_sent);
+    if (unsent.length === 0) return;
+    setBulkSending(task);
+    setEmailError(null);
+    try {
+      const res = await fetch("/api/vrijwilligers/bulk-indelingsmail", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: unsent.map(v => v.id) }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "Fout");
+      const sentAt = json.sent_at ?? new Date().toISOString();
+      const sentIds = new Set(
+        (json.results as { id: string; ok: boolean }[]).filter(r => r.ok).map(r => r.id)
+      );
+      setRows(prev => prev.map(r => sentIds.has(r.id) ? {
+        ...r,
+        planning_status:          "assignment_sent" as PlanningStatus,
+        assignment_email_sent:    true,
+        assignment_email_sent_at: sentAt,
+      } : r));
+    } catch (err) {
+      setEmailError(err instanceof Error ? err.message : "Bulk verzenden mislukt.");
+    }
+    setBulkSending(null);
   }
 
   async function handleSendEmail(v: VolunteerSignup) {
@@ -474,17 +504,28 @@ export default function VrijwilligersClient({ initialRows }: { initialRows: Volu
           {[...FINAL_TASK_OPTIONS.slice(1), { value: "", label: "Nog niet ingepland" }].map(opt => {
             const group = taskGroups[opt.value] ?? [];
             if (group.length === 0) return null;
+            const unsent = group.filter(v => !v.assignment_email_sent);
             return (
               <div key={opt.value} className="bg-white rounded-2xl shadow-sm border border-stone-100 overflow-hidden">
-                <div className="px-5 py-3 bg-gray-50 border-b border-stone-100 flex items-center justify-between">
-                  <h3 className="font-semibold text-gray-900 text-sm">{opt.label}</h3>
-                  <span className="text-xs text-gray-400">{group.length} personen</span>
+                <div className="px-5 py-3 bg-gray-50 border-b border-stone-100 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <h3 className="font-semibold text-gray-900 text-sm">{opt.label}</h3>
+                    <span className="text-xs text-gray-400">{group.length} personen</span>
+                  </div>
+                  {unsent.length > 0 && (
+                    <button
+                      onClick={() => handleBulkSend(opt.value, group)}
+                      disabled={bulkSending === opt.value}
+                      className="text-xs bg-blue-50 text-blue-700 border border-blue-200 px-3 py-1.5 rounded-lg hover:bg-blue-100 transition-colors disabled:opacity-50 whitespace-nowrap">
+                      {bulkSending === opt.value ? "Verzenden…" : `✉ Stuur ${unsent.length} niet-verzonden`}
+                    </button>
+                  )}
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
                       <tr>
-                        {["Naam","Telefoon","E-mail","Tijd/dagdeel","Status","Notitie"].map(h => (
+                        {["Naam","Telefoon","E-mail","Tijd/dagdeel","Status","Mail","Notitie"].map(h => (
                           <th key={h} className="text-left px-4 py-2 text-xs font-semibold text-gray-400">{h}</th>
                         ))}
                       </tr>
@@ -502,6 +543,18 @@ export default function VrijwilligersClient({ initialRows }: { initialRows: Volu
                             <span className={`inline-block text-xs font-semibold px-2 py-0.5 rounded-full ${STATUS_BADGE[r.planning_status ?? "new"] ?? ""}`}>
                               {STATUS_LABEL[r.planning_status ?? "new"]}
                             </span>
+                          </td>
+                          <td className="px-4 py-2 whitespace-nowrap">
+                            {r.assignment_email_sent ? (
+                              <span className="text-xs text-green-600" title={r.assignment_email_sent_at ? new Date(r.assignment_email_sent_at).toLocaleString("nl-NL") : "verzonden"}>✓</span>
+                            ) : (
+                              <button
+                                onClick={() => handleSendEmail(r)}
+                                disabled={emailSending === r.id}
+                                className="text-xs bg-blue-50 text-blue-700 border border-blue-200 px-2 py-1 rounded-lg hover:bg-blue-100 transition-colors disabled:opacity-50">
+                                {emailSending === r.id ? "…" : "✉"}
+                              </button>
+                            )}
                           </td>
                           <td className="px-4 py-2 text-xs text-amber-600 max-w-xs truncate">{r.internal_note ?? "—"}</td>
                         </tr>
