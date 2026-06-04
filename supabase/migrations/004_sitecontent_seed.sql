@@ -7,7 +7,7 @@ values (
   'sitecontent',
   jsonb_build_object(
     'name',                 'Autowasdag Sionkerk 2026',
-    'event_date',           '2026-08-22',
+    'event_date',           '2026-09-05',
     'start_time',           '09:00',
     'end_time',             '16:00',
     'wash_bays',            2,

@@ -19,8 +19,8 @@ export const metadata: Metadata = {
     template: "%s — Autowasdag Sionkerk Houten",
   },
   description:
-    "Laat uw auto wassen door de jeugdclubs van de Sionkerk op zaterdag 22 augustus. Koffie, gebak, friet en gezelligheid. Opbrengst voor de zalen.",
-  keywords: ["autowasdag", "Sionkerk", "Houten", "auto wassen", "jeugdclubs", "22 augustus"],
+    "Laat uw auto wassen door de jeugdclubs van de Sionkerk op zaterdag 5 september. Koffie, gebak, friet en gezelligheid. Opbrengst voor de zalen.",
+  keywords: ["autowasdag", "Sionkerk", "Houten", "auto wassen", "jeugdclubs", "5 september"],
   authors: [{ name: "Sionkerk Houten" }],
   openGraph: {
     type:        "website",
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
     url:         BASE_URL,
     siteName:    "Autowasdag Sionkerk Houten",
     title:       "Autowasdag Sionkerk Houten",
-    description: "Laat uw auto wassen door de jongeren van de Sionkerk. Zaterdag 22 augustus, 09:00–16:00, Eikenhout 221 Houten.",
+    description: "Laat uw auto wassen door de jongeren van de Sionkerk. Zaterdag 5 september, 09:00–16:00, Eikenhout 221 Houten.",
     images: [
       {
         url:   "/og-image.jpg",
@@ -41,7 +41,7 @@ export const metadata: Metadata = {
   twitter: {
     card:  "summary_large_image",
     title: "Autowasdag Sionkerk Houten",
-    description: "Zaterdag 22 augustus · Eikenhout 221 Houten · Jeugdclubs actie",
+    description: "Zaterdag 5 september · Eikenhout 221 Houten · Jeugdclubs actie",
   },
   robots: { index: true, follow: true },
   icons: {
