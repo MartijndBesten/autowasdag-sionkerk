@@ -104,7 +104,7 @@ export default function Hero({ eventDate }: { eventDate: string }) {
             >
               {/* Plaatsvervanger: vervang /images/hero.jpg door de echte foto */}
               <Image
-                src="/images/hero.jpg"
+                src="/images/hero.png"
                 alt="Jongeren wassen auto's tijdens de Autowasdag van de Sionkerk in Houten"
                 fill
                 className="object-cover"
