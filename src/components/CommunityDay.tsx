@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useModal } from "@/context/ModalContext";
 import type { Action } from "@/lib/supabase/types";
 
-const DEFAULT_COFFEE = "Laat je reservering zien en ontvang een gratis bakje koffie. Gebak en andere lekkernijen zijn verkrijgbaar tijdens de actiedag.";
+const DEFAULT_COFFEE = "Laat uw reservering zien en ontvang een gratis bakje koffie. Gebak en andere lekkernijen zijn verkrijgbaar tijdens de actiedag.";
 
 const activities = [
   {

@@ -21,7 +21,7 @@ const DEFAULT_CONTENT: Action = {
   hero_description: "Laat uw auto wassen door de jongeren van de Sionkerk, geniet van koffie en gezelligheid en steun het opknappen van de zalen.",
   hero_image_path: "/images/hero.jpg",
   action_tagline: "Sionkerk Houten · Jeugdclubs actie",
-  coffee_text: "Laat je reservering zien en ontvang een gratis bakje koffie. Gebak en andere lekkernijen zijn verkrijgbaar tijdens de actiedag.",
+  coffee_text: "Laat uw reservering zien en ontvang een gratis bakje koffie. Gebak en andere lekkernijen zijn verkrijgbaar tijdens de actiedag.",
   timeline: [], faq: [], practical_info: [],
   package_descriptions: {
     buiten_wassen: { name: "Buiten wassen", tagline: "Alleen buitenkant", description: "Een grondige handwas van de buitenkant van je auto. Gespoten, gezeemd en afgedroogd.", includes: ["Exterieur handwas", "Spoelen & afdrogen", "Ramen wassen"] },

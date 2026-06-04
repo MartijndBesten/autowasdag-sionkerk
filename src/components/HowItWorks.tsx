@@ -3,13 +3,13 @@ import type { Action, TimelineItem } from "@/lib/supabase/types";
 const DEFAULT_STEPS = [
   { number: "01", title: "Reserveer online of kom langs", description: "Via de website reserveer je eenvoudig een tijdslot. Langskomen zonder reservering kan ook, zolang er plek is." },
   { number: "02", title: "Kies je wasbeurt", description: "Kies voor Buiten wassen (€7,50, alleen buitenkant) of Compleet (€12,50, buiten wassen + stofzuigen + eenvoudige interieurreiniging)." },
-  { number: "03", title: "Gratis koffie bij je reservering", description: "Laat je reservering zien en ontvang een gratis bakje koffie. Gebak en andere lekkernijen zijn verkrijgbaar tijdens de actiedag." },
+  { number: "03", title: "Gratis koffie bij uw reservering", description: "Laat uw reservering zien en ontvang een gratis bakje koffie. Gebak en andere lekkernijen zijn verkrijgbaar tijdens de actiedag." },
   { number: "04", title: "Samen steunen we de zalen", description: "De opbrengst gaat naar het opknappen van de zalen van de Sionkerk." },
 ];
 
 const DEFAULT_TIMELINE: TimelineItem[] = [
   { time: "09:00", title: "Start autowassen",  desc: "De eerste auto's worden gewassen. Koffie en gebak staan klaar.", color: "green" },
-  { time: "10:00", title: "Koffie & gebak",    desc: "Gratis koffie bij je reservering. Gebak en lekkernijen zijn verkrijgbaar.", color: "amber" },
+  { time: "10:00", title: "Koffie & gebak",    desc: "Gratis koffie bij uw reservering. Gebak en lekkernijen zijn verkrijgbaar.", color: "amber" },
   { time: "12:00", title: "Friet & snacks",    desc: "Vanaf de middag zijn er friet en snacks verkrijgbaar (tegen betaling).", color: "orange" },
   { time: "16:00", title: "Laatste auto",       desc: "De laatste auto's worden afgerond. We sluiten gezamenlijk af.", color: "green" },
 ];
@@ -27,8 +27,7 @@ export default function HowItWorks({ action }: { action: Action | null }) {
     : DEFAULT_TIMELINE;
 
   const coffeeNote = action?.coffee_text
-    ? `Laat je reservering zien voor een <em>gratis koffie</em>. Gebak en snacks zijn verkrijgbaar.`
-    : `Laat je reservering zien voor een <em>gratis koffie</em>. Gebak en snacks zijn verkrijgbaar.`;
+    ?? `Laat uw reservering zien voor een <em>gratis koffie</em>. Gebak en snacks zijn verkrijgbaar.`;
 
   return (
     <section id="hoe-werkt-het" className="bg-white section-padding">

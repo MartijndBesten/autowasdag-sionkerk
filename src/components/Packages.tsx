@@ -26,7 +26,7 @@ const styles: Record<Variant, { wrap: string; label: string; name: string; price
 
 export default function Packages({ action }: { action: Action | null }) {
   const coffeeNote = action?.coffee_text
-    ?? "Laat je reservering zien en ontvang een gratis bakje koffie. Gebak en andere lekkernijen zijn verkrijgbaar tijdens de actiedag.";
+    ?? "Laat uw reservering zien en ontvang een gratis bakje koffie. Gebak en andere lekkernijen zijn verkrijgbaar tijdens de actiedag.";
 
   const packages = DEFAULT_PACKAGES.map(pkg => {
     const override = action?.package_descriptions?.[pkg.id];
