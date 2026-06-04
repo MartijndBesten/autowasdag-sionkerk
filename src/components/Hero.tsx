@@ -7,7 +7,7 @@ const DEFAULTS = {
   hero_title:      "Autowasdag",
   hero_subtitle:   "Sionkerk Houten",
   hero_description:"Laat uw auto wassen door de jongeren van de Sionkerk, geniet van koffie en gezelligheid en steun het opknappen van de zalen.",
-  hero_image_path: "/images/hero.png",
+  hero_image_path: "/images/hero.jpg",
   action_tagline:  "Sionkerk Houten · Jeugdclubs actie",
   location_address:"Eikenhout 221, 3991 PN Houten",
   start_time:      "09:00",

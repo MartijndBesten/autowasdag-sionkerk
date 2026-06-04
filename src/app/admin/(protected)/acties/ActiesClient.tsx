@@ -15,7 +15,7 @@ const emptyAction: Omit<Action, "id" | "created_at"> = {
   location_address: "Eikenhout 221", location_city: "Houten", location_postal: "3991 PN", location_maps_url: null,
   hero_title: "Autowasdag", hero_subtitle: "Sionkerk Houten",
   hero_description: "Laat uw auto wassen door de jongeren van de Sionkerk, geniet van koffie en gezelligheid en steun het opknappen van de zalen.",
-  hero_image_path: "/images/hero.png", action_tagline: "Sionkerk Houten · Jeugdclubs actie",
+  hero_image_path: "/images/hero.jpg", action_tagline: "Sionkerk Houten · Jeugdclubs actie",
   coffee_text: "Laat je reservering zien en ontvang een gratis bakje koffie. Gebak en andere lekkernijen zijn verkrijgbaar tijdens de actiedag.",
   timeline: [], faq: [], practical_info: [], package_descriptions: {},
   footer_email: "autowasdag@sionkerkhouten.nl", footer_website: "https://www.sionkerkhouten.nl", footer_tagline: null,
@@ -304,7 +304,7 @@ function TabHomepage({ d, e }: { d: D; e: SetFn }) {
       <Field label="H1 subtitel (gekleurd)"><input value={d.hero_subtitle} onChange={ev => e("hero_subtitle", ev.target.value)} placeholder="Sionkerk Houten" className={fc} /></Field>
       <Field label="Label boven titel"><input value={d.action_tagline} onChange={ev => e("action_tagline", ev.target.value)} placeholder="Sionkerk Houten · Jeugdclubs actie" className={fc} /></Field>
       <Field label="Introductietekst"><textarea rows={3} value={d.hero_description} onChange={ev => e("hero_description", ev.target.value)} className={`${fc} resize-none`} /></Field>
-      <Field label="Pad heldfoto"><input value={d.hero_image_path} onChange={ev => e("hero_image_path", ev.target.value)} placeholder="/images/hero.png" className={fc} /><p className="text-xs text-gray-400 mt-1">Bestand plaatsen in <code>public/images/</code></p></Field>
+      <Field label="Pad heldfoto"><input value={d.hero_image_path} onChange={ev => e("hero_image_path", ev.target.value)} placeholder="/images/hero.jpg" className={fc} /><p className="text-xs text-gray-400 mt-1">Bestand plaatsen in <code>public/images/</code></p></Field>
       <Field label="Koffie/gebak tekst (op pakkettenpagina)"><textarea rows={2} value={d.coffee_text} onChange={ev => e("coffee_text", ev.target.value)} className={`${fc} resize-none`} /></Field>
     </div>
   );
