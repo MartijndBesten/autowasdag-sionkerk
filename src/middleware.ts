@@ -23,31 +23,39 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  // Admin routes beveiligen
-  if (request.nextUrl.pathname.startsWith("/admin") &&
-      !request.nextUrl.pathname.startsWith("/admin/login")) {
+  const pathname = request.nextUrl.pathname;
 
+  // /admin/login: toon altijd — stuur ingelogde admins door naar /admin
+  if (pathname.startsWith("/admin/login")) {
     const { data: { user } } = await supabase.auth.getUser();
-
-    if (!user) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/admin/login";
-      return NextResponse.redirect(url);
+    if (user) {
+      const { data: adminUser } = await supabase
+        .from("admin_users")
+        .select("id")
+        .eq("id", user.id)
+        .eq("is_active", true)
+        .single();
+      if (adminUser) {
+        return NextResponse.redirect(new URL("/admin", request.url));
+      }
     }
+    return supabaseResponse;
+  }
 
-    // Controleer admin-rechten
+  // Overige /admin/* routes: vereisen ingelogde admin
+  if (pathname.startsWith("/admin")) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return NextResponse.redirect(new URL("/admin/login", request.url));
+    }
     const { data: adminUser } = await supabase
       .from("admin_users")
       .select("id")
       .eq("id", user.id)
       .eq("is_active", true)
       .single();
-
     if (!adminUser) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/admin/login";
-      url.searchParams.set("error", "no_access");
-      return NextResponse.redirect(url);
+      return NextResponse.redirect(new URL("/admin/login?error=no_access", request.url));
     }
   }
 
@@ -55,8 +63,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    "/admin/:path*",
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
-  ],
+  matcher: ["/admin/:path*"],
 };
