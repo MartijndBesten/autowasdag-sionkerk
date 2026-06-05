@@ -40,6 +40,18 @@ const statusBadge: Record<string, string> = {
   cancelled: "bg-red-100 text-red-700",
 };
 
+const statusLabel: Record<string, string> = {
+  pending:   "In behandeling",
+  confirmed: "Bevestigd",
+  completed: "Afgerond",
+  cancelled: "Geannuleerd",
+};
+
+const packageLabel: Record<string, string> = {
+  buiten_wassen: "Buiten wassen",
+  compleet:      "Compleet",
+};
+
 export default async function AdminDashboard() {
   const supabase = await createClient();
   const stats    = await getStats(supabase);
@@ -89,14 +101,14 @@ export default async function AdminDashboard() {
               {(stats.recentReservations as Array<Record<string,string>>).map((r) => (
                 <tr key={r.id} className="hover:bg-gray-50">
                   <td className="px-4 py-3 font-medium text-gray-900">{r.full_name}</td>
-                  <td className="px-4 py-3 text-gray-500">{r.package_type?.replace(/_/g," ")}</td>
+                  <td className="px-4 py-3 text-gray-500">{packageLabel[r.package_type] ?? r.package_type}</td>
                   <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{
                     (() => { const [y,m,d] = (r.reservation_date ?? "").split("-"); return y ? `${d}-${m}-${y}` : "—"; })()
                   }</td>
                   <td className="px-4 py-3 text-gray-500">{String(r.reservation_time ?? "").slice(0,5)}</td>
                   <td className="px-4 py-3">
                     <span className={`inline-block text-xs font-semibold px-2 py-1 rounded-full ${statusBadge[r.status] ?? "bg-gray-100 text-gray-600"}`}>
-                      {r.status}
+                      {statusLabel[r.status] ?? r.status}
                     </span>
                   </td>
                 </tr>

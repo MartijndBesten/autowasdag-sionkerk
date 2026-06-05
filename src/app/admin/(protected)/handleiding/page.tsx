@@ -135,7 +135,7 @@ export default function HandleidingPage() {
             <h3 className="font-semibold text-gray-900">Stap 5 — Status bijwerken</h3>
             <p>
               Nadat je de mail hebt verstuurd, kun je de status van de vrijwilligers via het indeelvenster
-              zetten op <strong>Bevestiging verstuurd</strong>. Zo zie je later wie al bericht heeft gehad.
+              zetten op <strong>Gemaild</strong>. Zo zie je later wie al bericht heeft gehad.
             </p>
           </div>
         </div>

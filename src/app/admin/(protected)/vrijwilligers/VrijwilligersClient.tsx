@@ -965,7 +965,7 @@ export default function VrijwilligersClient({ initialRows, suppliesOptions }: { 
             <div>
               <h2 className="font-bold text-gray-900 text-base mb-0.5">E-mailadressen kopiëren</h2>
               <p className="text-sm text-gray-500">
-                Klik op een groep om de e-mailadressen naar het klembord te kopiëren. Alleen vrijwilligers met status <strong>Ingepland</strong> of <strong>Bevestiging verstuurd</strong> worden meegenomen ({plannedRows.length} personen).
+                Klik op een groep om de e-mailadressen naar het klembord te kopiëren. Alleen vrijwilligers met status <strong>Ingepland</strong> of <strong>Gemaild</strong> worden meegenomen ({plannedRows.length} personen).
               </p>
             </div>
 
@@ -991,7 +991,7 @@ export default function VrijwilligersClient({ initialRows, suppliesOptions }: { 
             )}
 
             {plannedRows.length === 0 && (
-              <p className="text-sm text-gray-400 italic">Geen ingeplande vrijwilligers gevonden. Zet vrijwilligers eerst op status &ldquo;Ingepland&rdquo; of &ldquo;Bevestiging verstuurd&rdquo;.</p>
+              <p className="text-sm text-gray-400 italic">Geen ingeplande vrijwilligers gevonden. Zet vrijwilligers eerst op status &ldquo;Ingepland&rdquo; of &ldquo;Gemaild&rdquo;.</p>
             )}
           </div>
 

@@ -11,9 +11,13 @@ const TYPE_LABELS: Record<string, string> = {
   sponsoring:    "🤝 Sponsoring",
   spullen:       "📦 Spullen",
   eten_verkopen: "🍟 Eten verkopen",
-  donatie:       "💜 Losse bijdrage",
   overig:        "✋ Overig",
 };
+
+function typeLabel(r: ContributionSignup): string {
+  if (r.sponsorship_type === "losse_bijdrage") return "💜 Losse bijdrage";
+  return TYPE_LABELS[r.contribution_type] ?? r.contribution_type;
+}
 
 const STATUS_OPTIONS = [
   { value: "pending",   label: "Nog te betalen",   cls: "bg-orange-100 text-orange-700" },
@@ -46,7 +50,7 @@ function exportCSV(rows: ContributionSignup[]) {
     r.full_name,
     r.email,
     r.phone ?? "",
-    TYPE_LABELS[r.contribution_type]?.replace(/^[^ ]+ /, "") ?? r.contribution_type,
+    typeLabel(r).replace(/^[^ ]+ /, ""),
     r.description ?? "",
     statusLabel(r.status),
     r.notes ?? "",
@@ -150,7 +154,7 @@ export default function BijdragenPage({ initialData }: { initialData: Contributi
                   </td>
                   <td className="px-4 py-3">
                     <span className="text-xs bg-stone-50 border border-stone-200 text-gray-600 px-2 py-0.5 rounded-full whitespace-nowrap">
-                      {TYPE_LABELS[r.contribution_type]?.replace(/^[^ ]+ /, "") ?? r.contribution_type}
+                      {typeLabel(r).replace(/^[^ ]+ /, "")}
                     </span>
                   </td>
                   <td className="px-4 py-3">
