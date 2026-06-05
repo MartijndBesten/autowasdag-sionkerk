@@ -540,7 +540,7 @@ export async function sendDonationNotification(data: {
   return send(`Nieuwe bijdrage — ${data.name} (${data.amount})`, html);
 }
 
-// ── Losse bijdrage: bevestigingsmail naar donateur ───────────────────────────
+// ── Losse bijdrage: bevestigingsmail naar bijdragegever ──────────────────────
 
 export async function sendDonationConfirmation(data: {
   name: string;

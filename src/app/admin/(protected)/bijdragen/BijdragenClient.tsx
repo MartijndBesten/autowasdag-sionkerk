@@ -79,7 +79,7 @@ export default function BijdragenPage({ initialData }: { initialData: Contributi
 
   const totalDonaties = useMemo(() => {
     return data
-      .filter(r => r.contribution_type === "donatie" && ["paid_cash","paid_qr","confirmed"].includes(r.status))
+      .filter(r => r.contribution_type === "donatie" && ["paid_cash","paid_qr"].includes(r.status))
       .reduce((sum, r) => {
         const m = r.description?.match(/€(\d+[,.]?\d*)/);
         return sum + (m ? parseFloat(m[1].replace(",", ".")) : 0);
