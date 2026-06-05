@@ -2,7 +2,7 @@ import type { Action, TimelineItem } from "@/lib/supabase/types";
 
 const DEFAULT_STEPS = [
   { number: "01", title: "Reserveer online of kom langs", description: "Via de website reserveert u eenvoudig een tijdslot. Langskomen zonder reservering kan ook, zolang er plek is." },
-  { number: "02", title: "Kies uw wasbeurt", description: "Kies voor Buitenkant wassen (€7,50, alleen buitenkant) of Compleet (€12,50, buitenkant wassen + stofzuigen + eenvoudige interieurreiniging)." },
+  { number: "02", title: "Kies uw wasbeurt", description: "Kies voor Buitenkant wassen (€10,00, alleen buitenkant) of Compleet (€15,00, buitenkant wassen + stofzuigen + eenvoudige interieurreiniging)." },
   { number: "03", title: "Gratis koffie bij uw reservering", description: "Laat uw reservering zien en ontvang een gratis bakje koffie. Gebak en andere lekkernijen zijn verkrijgbaar tijdens de actiedag." },
   { number: "04", title: "Samen steunen we de zalen", description: "De opbrengst gaat naar het opknappen van de zalen van de Sionkerk." },
 ];

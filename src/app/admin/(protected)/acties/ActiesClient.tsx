@@ -14,7 +14,7 @@ const DEFAULT_CONTENT: Action = {
   start_time: "09:00", end_time: "16:00",
   wash_bays: 2, max_slots_per_time: 2,
   reservations_open: true, volunteers_open: true,
-  price_buiten_wassen: 7.50, price_compleet: 12.50,
+  price_buiten_wassen: 10.00, price_compleet: 15.00,
   notify_email: null, internal_notes: null,
   location_address: "Eikenhout 221", location_city: "Houten", location_postal: "3991 PN", location_maps_url: null,
   hero_title: "Autowasdag", hero_subtitle: "Sionkerk Houten",

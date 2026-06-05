@@ -26,8 +26,8 @@ const PACKAGE_LABELS: Record<string, string> = {
 };
 
 const PACKAGE_PRICES: Record<string, number> = {
-  buiten_wassen: 7.50,
-  compleet:      12.50,
+  buiten_wassen: 10.00,
+  compleet:      15.00,
   basis:         5,
   binnen_zuigen: 7.50,
   deluxe:        15,

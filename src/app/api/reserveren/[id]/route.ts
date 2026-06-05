@@ -259,7 +259,7 @@ export async function POST(
     const { data: priceRow } = await supabase
       .from("settings").select("value").eq("key", "prices").single();
     const prices = (priceRow?.value as Record<string, number>) ?? {};
-    const price  = prices[res.package_type] ?? (res.package_type === "compleet" ? 12.50 : 7.50);
+    const price  = prices[res.package_type] ?? (res.package_type === "compleet" ? 15.00 : 10.00);
 
     await sendReservationConfirmation({
       name:          res.full_name,

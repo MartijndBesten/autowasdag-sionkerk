@@ -16,8 +16,8 @@ export default function ReserverenPageForm({
   durationCompleet?: number;
 }) {
   const PACKAGE_OPTIONS: { value: PackageType; label: string; duration: string; price: string }[] = [
-    { value: "buiten_wassen", label: "Buitenkant wassen",          duration: `± ${durationBuitenWassen} min`, price: "€7,50" },
-    { value: "compleet",      label: "Compleet (buiten + binnen)", duration: `± ${durationCompleet} min`,     price: "€12,50" },
+    { value: "buiten_wassen", label: "Buitenkant wassen",          duration: `± ${durationBuitenWassen} min`, price: "€10,00" },
+    { value: "compleet",      label: "Compleet (buiten + binnen)", duration: `± ${durationCompleet} min`,     price: "€15,00" },
   ];
   const searchParams = useSearchParams();
   const router       = useRouter();

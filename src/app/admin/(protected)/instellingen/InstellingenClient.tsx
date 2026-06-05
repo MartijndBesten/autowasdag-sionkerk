@@ -39,7 +39,7 @@ export default function InstellingenClient({ initialSettings }: { initialSetting
   // Zorg dat pakketduur altijd een getal heeft (bestaande instellingen zonder deze velden)
   if (!ev0.duration_buiten_wassen) ev0.duration_buiten_wassen = 20;
   if (!ev0.duration_compleet)      ev0.duration_compleet      = 40;
-  const pr0  = (initialSettings.prices  as PriceSettings) ?? { buiten_wassen:7.50, compleet:12.50 };
+  const pr0  = (initialSettings.prices  as PriceSettings) ?? { buiten_wassen:10.00, compleet:15.00 };
   const sup0 = Array.isArray(initialSettings.volunteer_supplies) && (initialSettings.volunteer_supplies as SupplyOption[]).length > 0
     ? (initialSettings.volunteer_supplies as SupplyOption[])
     : DEFAULT_SUPPLIES;

@@ -5,7 +5,7 @@ import { computeSlotsNeeded, SLOT_DURATION } from "@/lib/timeslots";
 import type { PackageType } from "@/lib/supabase/types";
 
 const VALID_PACKAGES: PackageType[] = ["buiten_wassen", "compleet"];
-const PACKAGE_PRICES: Record<string, number> = { buiten_wassen: 7.50, compleet: 12.50 };
+const PACKAGE_PRICES: Record<string, number> = { buiten_wassen: 10.00, compleet: 15.00 };
 
 function addMinutes(time: string, minutes: number): string {
   const [h, m] = time.split(":").map(Number);

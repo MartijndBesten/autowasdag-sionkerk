@@ -6,8 +6,8 @@ export default function Footer({ action }: { action: Action | null }) {
   const dateFormatted = action?.event_date ? formatEventDate(action.event_date) : "";
   const email   = action?.footer_email   ?? "autowasdag@sionkerkhouten.nl";
   const website = action?.footer_website ?? "https://www.hervormdhouten.nl";
-  const bw  = Number(action?.price_buiten_wassen ?? 7.50).toFixed(2).replace(".", ",");
-  const cmp = Number(action?.price_compleet      ?? 12.50).toFixed(2).replace(".", ",");
+  const bw  = Number(action?.price_buiten_wassen ?? 10.00).toFixed(2).replace(".", ",");
+  const cmp = Number(action?.price_compleet      ?? 15.00).toFixed(2).replace(".", ",");
   const address = action?.location_address ?? "Eikenhout 221";
   const postal  = action?.location_postal  ?? "3991 PN";
   const city    = action?.location_city    ?? "Houten";

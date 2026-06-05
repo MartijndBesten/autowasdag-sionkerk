@@ -5,8 +5,8 @@ import type { PackageType } from "@/lib/types";
 import { useModal } from "@/context/ModalContext";
 
 const packageLabels: Record<PackageType, string> = {
-  buiten_wassen: "Buiten wassen — €7,50",
-  compleet:      "Compleet — €12,50",
+  buiten_wassen: "Buiten wassen — €10,00",
+  compleet:      "Compleet — €15,00",
 };
 
 export default function ReservationForm() {

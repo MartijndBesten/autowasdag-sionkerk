@@ -31,8 +31,8 @@ export default function Packages({ action }: { action: Action | null }) {
   const packages = DEFAULT_PACKAGES.map(pkg => {
     const override = action?.package_descriptions?.[pkg.id];
     const price = pkg.id === "buiten_wassen"
-      ? Number(action?.price_buiten_wassen ?? 7.50)
-      : Number(action?.price_compleet ?? 12.50);
+      ? Number(action?.price_buiten_wassen ?? 10.00)
+      : Number(action?.price_compleet ?? 15.00);
     return {
       ...pkg,
       name:        override?.name        ?? pkg.name,
