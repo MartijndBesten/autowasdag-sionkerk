@@ -117,15 +117,9 @@ export default function HandleidingPage() {
             <h3 className="font-semibold text-gray-900">Stap 3 — Open je eigen mailprogramma</h3>
             <p>
               Open een nieuw bericht in Gmail, Outlook of je andere mailprogramma.
-              Plak de adressen in het <strong>BCC-veld</strong> — niet in Aan of CC.
+              Plak de adressen in het <strong>BCC-veld</strong> — niet in Aan of CC — zodat vrijwilligers
+              elkaars e-mailadres niet zien.
             </p>
-            <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex gap-2">
-              <span className="text-amber-500 flex-shrink-0">⚠️</span>
-              <p className="text-amber-700 text-xs">
-                <strong>Gebruik altijd BCC.</strong> Als je adressen in het &ldquo;Aan&rdquo;-veld zet,
-                kan elke ontvanger alle andere e-mailadressen zien. Dat is een privacyschending.
-              </p>
-            </div>
           </div>
 
           <div className="space-y-2">

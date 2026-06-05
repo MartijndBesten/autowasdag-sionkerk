@@ -563,10 +563,6 @@ export default function VrijwilligersClient({ initialRows, suppliesOptions }: { 
               <CopyBtn key={g.key} emails={g.emails} label={g.label} btnKey={`tb-task-${g.key}`} />
             ))}
           </div>
-          <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-1.5 flex gap-1.5 items-start">
-            <span className="flex-shrink-0">⚠️</span>
-            <span><strong>Gebruik altijd BCC</strong> — zodat vrijwilligers elkaars e-mailadres niet zien.</span>
-          </p>
         </div>
       </div>
 
