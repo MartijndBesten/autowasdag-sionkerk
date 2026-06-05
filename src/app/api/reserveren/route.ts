@@ -142,22 +142,26 @@ export async function POST(req: NextRequest) {
       console.log("[reserveren] bevestigingsmail verstuurd");
     } catch (e) { console.error("[reserveren] bevestigingsmail fout:", e); }
 
-    // Logging (niet-kritiek, fire-and-forget)
-    supabase.from("email_logs").insert({
-      to_address:     process.env.NOTIFY_EMAIL ?? "",
-      subject:        `Nieuwe reservering — ${full_name}`,
-      template:       "reservation_admin",
-      reference_id:   reservation?.id,
-      reference_type: "car_reservation",
-      status:         "sent",
-    }).catch(() => {});
+    // Logging (niet-kritiek — eigen try-catch zodat het nooit een 500 veroorzaakt)
+    try {
+      await supabase.from("email_logs").insert({
+        to_address:     process.env.NOTIFY_EMAIL ?? "",
+        subject:        `Nieuwe reservering — ${full_name}`,
+        template:       "reservation_admin",
+        reference_id:   reservation?.id,
+        reference_type: "car_reservation",
+        status:         "sent",
+      });
+    } catch { /* silenced */ }
 
-    supabase.from("audit_logs").insert({
-      action:     "INSERT",
-      table_name: "car_reservations",
-      record_id:  reservation?.id,
-      new_data:   { full_name, email, package_type, reservation_date, reservation_time },
-    }).catch(() => {});
+    try {
+      await supabase.from("audit_logs").insert({
+        action:     "INSERT",
+        table_name: "car_reservations",
+        record_id:  reservation?.id,
+        new_data:   { full_name, email, package_type, reservation_date, reservation_time },
+      });
+    } catch { /* silenced */ }
 
     console.log("[reserveren] success response verzonden");
     return NextResponse.json({ ok: true, id: reservation?.id }, { status: 200 });
