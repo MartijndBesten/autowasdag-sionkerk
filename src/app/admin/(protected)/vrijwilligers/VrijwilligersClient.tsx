@@ -92,22 +92,6 @@ const COST_LABELS: Record<string, string> = {
   weet_ik_nog_niet:   "Weet ik nog niet",
 };
 
-const SUPPLIES_LABELS: Record<string, string> = {
-  emmer:             "Emmer",
-  autowasshampoo:    "Autowasshampoo",
-  wasborstel:        "Wasborstel",
-  haspel:            "Haspel / verlengsnoer",
-  zeem:              "Zeem",
-  doeken_binnenkant: "Doeken voor binnenkant auto",
-  stofzuiger:        "Stofzuiger",
-  spons:             "Spons",
-  droogdoeken:       "Droogdoeken",
-  tuinslang:         "Tuinslang",
-  hogedrukreiniger:  "Hogedrukreiniger",
-  partytent:         "Partytent",
-  tafel:             "Tafel",
-  anders:            "Anders",
-};
 
 function parseContrib(details: string | null, key: string): string | null {
   if (!details) return null;
@@ -130,7 +114,8 @@ type Tab = "lijst" | "planning" | "bakken" | "spullen";
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export default function VrijwilligersClient({ initialRows }: { initialRows: VolunteerSignup[] }) {
+export default function VrijwilligersClient({ initialRows, suppliesOptions }: { initialRows: VolunteerSignup[]; suppliesOptions: { value: string; label: string }[] }) {
+  const SUPPLIES_LABELS = Object.fromEntries(suppliesOptions.map(o => [o.value, o.label]));
   const [rows,         setRows]         = useState<VolunteerSignup[]>(initialRows);
   const [activeTab,    setActiveTab]    = useState<Tab>("lijst");
   const [modalOpen,    setModalOpen]    = useState(false);

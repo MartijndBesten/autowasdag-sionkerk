@@ -5,24 +5,73 @@ import { createClient } from "@/lib/supabase/client";
 
 interface EventSettings { date: string; start_time: string; end_time: string; wash_bays: number; reservations_open: boolean; volunteers_open: boolean; }
 interface PriceSettings { buiten_wassen: number; compleet: number; }
+interface SupplyOption  { value: string; label: string; }
+
+const DEFAULT_SUPPLIES: SupplyOption[] = [
+  { value: "emmer",             label: "Emmer" },
+  { value: "autowasshampoo",    label: "Autowasshampoo" },
+  { value: "wasborstel",        label: "Wasborstel" },
+  { value: "haspel",            label: "Haspel / verlengsnoer" },
+  { value: "zeem",              label: "Zeem" },
+  { value: "doeken_binnenkant", label: "Doeken voor binnenkant auto" },
+  { value: "stofzuiger",        label: "Stofzuiger" },
+  { value: "spons",             label: "Spons" },
+  { value: "droogdoeken",       label: "Droogdoeken" },
+  { value: "tuinslang",         label: "Tuinslang" },
+  { value: "hogedrukreiniger",  label: "Hogedrukreiniger" },
+  { value: "partytent",         label: "Partytent" },
+  { value: "tafel",             label: "Tafel" },
+  { value: "anders",            label: "Anders, namelijk" },
+];
+
+function labelToValue(label: string): string {
+  return label.toLowerCase()
+    .replace(/[/\\]/g, " ").trim()
+    .replace(/\s+/g, "_")
+    .replace(/[^a-z0-9_]/g, "")
+    .replace(/_+/g, "_")
+    .replace(/^_|_$/g, "")
+    .slice(0, 40);
+}
 
 export default function InstellingenClient({ initialSettings }: { initialSettings: Record<string, unknown> }) {
-  const ev0 = (initialSettings.event   as EventSettings) ?? { date:"", start_time:"09:00", end_time:"16:00", wash_bays:2, reservations_open:true, volunteers_open:true };
-  const pr0 = (initialSettings.prices  as PriceSettings) ?? { buiten_wassen:7.50, compleet:12.50 };
+  const ev0  = (initialSettings.event   as EventSettings) ?? { date:"", start_time:"09:00", end_time:"16:00", wash_bays:2, reservations_open:true, volunteers_open:true };
+  const pr0  = (initialSettings.prices  as PriceSettings) ?? { buiten_wassen:7.50, compleet:12.50 };
+  const sup0 = Array.isArray(initialSettings.volunteer_supplies) && (initialSettings.volunteer_supplies as SupplyOption[]).length > 0
+    ? (initialSettings.volunteer_supplies as SupplyOption[])
+    : DEFAULT_SUPPLIES;
 
-  const [event,  setEvent]  = useState<EventSettings>(ev0);
-  const [prices, setPrices] = useState<PriceSettings>(pr0);
-  const [saving, setSaving] = useState(false);
-  const [saved,  setSaved]  = useState(false);
+  const [event,    setEvent]    = useState<EventSettings>(ev0);
+  const [prices,   setPrices]   = useState<PriceSettings>(pr0);
+  const [supplies, setSupplies] = useState<SupplyOption[]>(sup0);
+  const [newLabel, setNewLabel] = useState("");
+  const [saving,   setSaving]   = useState(false);
+  const [saved,    setSaved]    = useState(false);
+
+  function addSupply() {
+    const label = newLabel.trim();
+    if (!label) return;
+    const value = labelToValue(label) || `item_${Date.now()}`;
+    setSupplies(p => [...p, { value, label }]);
+    setNewLabel("");
+  }
+  function removeSupply(i: number) {
+    setSupplies(p => p.filter((_, idx) => idx !== i));
+  }
+  function updateLabel(i: number, label: string) {
+    setSupplies(p => p.map((s, idx) => idx === i ? { ...s, label } : s));
+  }
 
   async function save() {
     setSaving(true);
     const supabase = createClient();
     await Promise.all([
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (supabase as any).from("settings").upsert({ key:"event",  value: event  }, { onConflict:"key" }),
+      (supabase as any).from("settings").upsert({ key:"event",             value: event    }, { onConflict:"key" }),
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (supabase as any).from("settings").upsert({ key:"prices", value: prices }, { onConflict:"key" }),
+      (supabase as any).from("settings").upsert({ key:"prices",            value: prices   }, { onConflict:"key" }),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (supabase as any).from("settings").upsert({ key:"volunteer_supplies",value: supplies }, { onConflict:"key" }),
     ]);
     setSaving(false);
     setSaved(true);
@@ -98,6 +147,46 @@ export default function InstellingenClient({ initialSettings }: { initialSetting
               </div>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* Spullen meenemen — opties */}
+      <div className="bg-white rounded-2xl shadow-sm border border-stone-100 p-6 space-y-4">
+        <div>
+          <h2 className="font-semibold text-gray-900">Spullen meenemen — keuzeopties</h2>
+          <p className="text-xs text-gray-400 mt-1">Deze opties verschijnen als vinkjes in het vrijwilligersformulier. De <strong>sleutel</strong> is niet aanpasbaar na aanmaken (wordt opgeslagen bij aanmeldingen).</p>
+        </div>
+
+        <div className="space-y-2">
+          {supplies.map((s, i) => (
+            <div key={s.value} className="flex items-center gap-2">
+              <span className="text-xs text-gray-400 font-mono bg-stone-50 border border-stone-200 rounded px-2 py-1 w-44 flex-shrink-0 truncate">{s.value}</span>
+              <input
+                value={s.label}
+                onChange={e => updateLabel(i, e.target.value)}
+                className={`${f} flex-1 min-w-0`}
+                placeholder="Label (zichtbaar voor vrijwilliger)"
+              />
+              <button type="button" onClick={() => removeSupply(i)}
+                className="text-red-400 hover:text-red-600 text-lg leading-none flex-shrink-0 px-1" title="Verwijderen">
+                ×
+              </button>
+            </div>
+          ))}
+        </div>
+
+        <div className="flex gap-2 pt-1">
+          <input
+            value={newLabel}
+            onChange={e => setNewLabel(e.target.value)}
+            onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); addSupply(); } }}
+            className={`${f} flex-1`}
+            placeholder="Nieuw item, bijv. Bezem"
+          />
+          <button type="button" onClick={addSupply}
+            className="bg-stone-100 text-stone-700 border border-stone-200 px-4 py-2 rounded-xl text-sm hover:bg-stone-200 transition-colors flex-shrink-0">
+            + Toevoegen
+          </button>
         </div>
       </div>
 

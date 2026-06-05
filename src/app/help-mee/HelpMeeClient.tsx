@@ -32,26 +32,6 @@ const categories = [
 
 const allOptions = categories.flatMap(c => c.options);
 
-const SUPPLIES_OPTIONS = [
-  { value: "emmer",             label: "Emmer" },
-  { value: "autowasshampoo",    label: "Autowasshampoo" },
-  { value: "wasborstel",        label: "Wasborstel" },
-  { value: "haspel",            label: "Haspel / verlengsnoer" },
-  { value: "zeem",              label: "Zeem" },
-  { value: "doeken_binnenkant", label: "Doeken voor binnenkant auto" },
-  { value: "stofzuiger",        label: "Stofzuiger" },
-  { value: "spons",             label: "Spons" },
-  { value: "droogdoeken",       label: "Droogdoeken" },
-  { value: "tuinslang",         label: "Tuinslang" },
-  { value: "hogedrukreiniger",  label: "Hogedrukreiniger" },
-  { value: "partytent",         label: "Partytent" },
-  { value: "tafel",             label: "Tafel" },
-  { value: "anders",            label: "Anders, namelijk" },
-];
-
-const SUPPLIES_LABELS: Record<string, string> = Object.fromEntries(
-  SUPPLIES_OPTIONS.map(o => [o.value, o.label])
-);
 
 const AVAIL_OPTIONS = [
   { value: "full_day",  label: "Hele dag",  sub: "09:00 – 16:00" },
@@ -78,7 +58,8 @@ const fieldCls = "w-full border border-stone-200 bg-white rounded-xl px-4 py-3 t
 const labelCls = "block text-xs font-semibold text-green-700 uppercase tracking-wider mb-1.5";
 const reqStar  = <span className="text-red-400 ml-1">*</span>;
 
-export default function HelpMeeClient({ dateFormatted }: { dateFormatted: string }) {
+export default function HelpMeeClient({ dateFormatted, suppliesOptions }: { dateFormatted: string; suppliesOptions: { value: string; label: string }[] }) {
+  const suppliesLabels = Object.fromEntries(suppliesOptions.map(o => [o.value, o.label]));
   const [selected,          setSelected]          = useState<string[]>([]);
   const [availability,      setAvailability]      = useState("full_day");
   const [form,              setForm]              = useState({ name: "", email: "", phone: "", notes: "" });
@@ -104,7 +85,7 @@ export default function HelpMeeClient({ dateFormatted }: { dateFormatted: string
     if (selected.includes("bakken") && details.bakken.trim()) parts.push(`Bakken: ${details.bakken.trim()}`);
     if (selected.includes("spullen")) {
       const items = spullenItems.filter(s => s !== "anders");
-      if (items.length > 0) parts.push(`Spullen: ${items.map(s => SUPPLIES_LABELS[s] ?? s).join(", ")}`);
+      if (items.length > 0) parts.push(`Spullen: ${items.map(s => suppliesLabels[s] ?? s).join(", ")}`);
       if (spullenItems.includes("anders") && spullenAnders.trim()) parts.push(`SpullenAnders: ${spullenAnders.trim()}`);
       if (spullenToelichting.trim()) parts.push(`SpullenToelichting: ${spullenToelichting.trim()}`);
     }
@@ -326,7 +307,7 @@ export default function HelpMeeClient({ dateFormatted }: { dateFormatted: string
                 <div>
                   <label className={labelCls}>Wat kun je meenemen? {reqStar}</label>
                   <div className="grid grid-cols-2 gap-1.5 mt-1">
-                    {SUPPLIES_OPTIONS.map(opt => {
+                    {suppliesOptions.map(opt => {
                       const checked = spullenItems.includes(opt.value);
                       return (
                         <label key={opt.value}
