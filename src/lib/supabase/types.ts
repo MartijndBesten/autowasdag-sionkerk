@@ -6,7 +6,7 @@ export type PaymentStatus = "unpaid" | "paid_cash" | "paid_qr" | "donated_extra"
 export type VolunteerStatus  = "pending" | "confirmed" | "cancelled";
 export type ContributionType = "bakken" | "sponsoring" | "spullen" | "eten_verkopen" | "overig";
 export type AvailabilityType = "full_day" | "morning" | "afternoon";
-export type PlanningStatus   = "new" | "review" | "planned" | "assignment_sent" | "cancelled" | "reserve" | "not_needed";
+export type PlanningStatus   = "new" | "review" | "planned" | "assignment_sent" | "confirmed" | "cancelled" | "reserve" | "not_needed";
 export type FinalShift       = "not_chosen" | "morning" | "afternoon" | "full_day" | "specific";
 
 export interface CarReservation {

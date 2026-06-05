@@ -34,17 +34,22 @@ export default async function HelpMeePage() {
   const eventDate     = await getEventDate();
   const dateFormatted = formatEventDate(eventDate);
 
+  const supabase = createAdminClient() as any;
+
   let suppliesOptions: SupplyOption[] = DEFAULT_SUPPLIES;
+  let volunteersOpen = true;
   try {
-    const supabase = createAdminClient() as any;
-    const { data: supData } = await supabase
-      .from("settings").select("value").eq("key", "volunteer_supplies").single();
-    if (Array.isArray(supData?.value) && supData.value.length > 0) {
-      suppliesOptions = supData.value as SupplyOption[];
+    const [supRes, eventRes] = await Promise.all([
+      supabase.from("settings").select("value").eq("key", "volunteer_supplies").single(),
+      supabase.from("settings").select("value").eq("key", "event").single(),
+    ]);
+    if (Array.isArray(supRes.data?.value) && supRes.data.value.length > 0) {
+      suppliesOptions = supRes.data.value as SupplyOption[];
     }
-  } catch {
-    // val terug op defaults bij build of ontbrekende env vars
-  }
+    if ((eventRes.data?.value as Record<string, unknown>)?.volunteers_open === false) {
+      volunteersOpen = false;
+    }
+  } catch { /* val terug op defaults */ }
 
   return (
     <main
@@ -52,7 +57,20 @@ export default async function HelpMeePage() {
       style={{ background: "linear-gradient(170deg, #faf6e8 0%, #f5edd6 50%, #e8f5ef 100%)" }}
     >
       <Navigation />
-      <HelpMeeClient dateFormatted={dateFormatted} suppliesOptions={suppliesOptions} />
+      {volunteersOpen ? (
+        <HelpMeeClient dateFormatted={dateFormatted} suppliesOptions={suppliesOptions} />
+      ) : (
+        <div className="min-h-screen flex items-center justify-center px-4">
+          <div className="text-center max-w-sm space-y-4">
+            <div className="text-5xl mb-2">🔒</div>
+            <h1 className="text-2xl font-bold text-green-950">Aanmelden is gesloten</h1>
+            <p className="text-gray-500 leading-relaxed">
+              Aanmelden als vrijwilliger is op dit moment gesloten.
+              Neem contact op met de organisatie als je nog een vraag hebt.
+            </p>
+          </div>
+        </div>
+      )}
       <ModalRoot />
     </main>
   );

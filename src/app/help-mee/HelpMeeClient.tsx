@@ -94,6 +94,7 @@ export default function HelpMeeClient({ dateFormatted, suppliesOptions }: { date
   }
 
   function clientValidate(): string | null {
+    if (!form.phone.trim()) return "Telefoonnummer is verplicht — we kunnen je dan op de dag zelf bereiken.";
     if (selected.includes("bakken")) {
       if (!details.bakken.trim()) return "Vul in wat je gaat bakken.";
       if (!costPreference)        return "Geef aan hoe de kosten van het bakken worden gedekt.";
@@ -384,8 +385,8 @@ export default function HelpMeeClient({ dateFormatted, suppliesOptions }: { date
             </div>
           </div>
           <div>
-            <label className={labelCls}>Telefoon <span className="text-gray-300 font-normal normal-case tracking-normal">(optioneel)</span></label>
-            <input type="tel" value={form.phone} onChange={e => set("phone", e.target.value)}
+            <label className={labelCls}>Telefoon {reqStar}</label>
+            <input type="tel" required value={form.phone} onChange={e => set("phone", e.target.value)}
               placeholder="06 00 00 00 00" className={fieldCls} />
           </div>
           <div>
@@ -400,7 +401,7 @@ export default function HelpMeeClient({ dateFormatted, suppliesOptions }: { date
           <p className="text-red-500 text-sm bg-red-50 border border-red-200 rounded-xl px-4 py-2">{errorMsg}</p>
         )}
 
-        <button type="submit" disabled={status === "loading" || !form.name || !form.email}
+        <button type="submit" disabled={status === "loading" || !form.name || !form.email || !form.phone}
           className="w-full bg-green-800 text-white font-semibold text-base rounded-full py-4 hover:bg-green-900 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2">
           {status === "loading"
             ? <><svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>Bezig…</>

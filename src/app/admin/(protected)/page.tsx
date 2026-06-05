@@ -90,8 +90,10 @@ export default async function AdminDashboard() {
                 <tr key={r.id} className="hover:bg-gray-50">
                   <td className="px-4 py-3 font-medium text-gray-900">{r.full_name}</td>
                   <td className="px-4 py-3 text-gray-500">{r.package_type?.replace(/_/g," ")}</td>
-                  <td className="px-4 py-3 text-gray-500">{r.reservation_date}</td>
-                  <td className="px-4 py-3 text-gray-500">{String(r.reservation_time).slice(0,5)}</td>
+                  <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{
+                    (() => { const [y,m,d] = (r.reservation_date ?? "").split("-"); return y ? `${d}-${m}-${y}` : "—"; })()
+                  }</td>
+                  <td className="px-4 py-3 text-gray-500">{String(r.reservation_time ?? "").slice(0,5)}</td>
                   <td className="px-4 py-3">
                     <span className={`inline-block text-xs font-semibold px-2 py-1 rounded-full ${statusBadge[r.status] ?? "bg-gray-100 text-gray-600"}`}>
                       {r.status}

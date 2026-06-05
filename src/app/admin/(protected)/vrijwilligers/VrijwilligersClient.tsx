@@ -65,7 +65,8 @@ const PLANNING_STATUS_OPTIONS: { value: PlanningStatus; label: string }[] = [
   { value: "new",              label: "Nieuw" },
   { value: "review",           label: "Te beoordelen" },
   { value: "planned",          label: "Ingepland" },
-  { value: "assignment_sent",  label: "Bevestiging verstuurd" },
+  { value: "assignment_sent",  label: "Gemaild" },
+  { value: "confirmed",        label: "Bevestigd" },
   { value: "cancelled",        label: "Afgezegd" },
   { value: "reserve",          label: "Reserve" },
   { value: "not_needed",       label: "Niet nodig" },
@@ -75,7 +76,8 @@ const STATUS_BADGE: Record<string, string> = {
   new:             "bg-gray-100 text-gray-600",
   review:          "bg-yellow-100 text-yellow-800",
   planned:         "bg-blue-100 text-blue-800",
-  assignment_sent: "bg-green-100 text-green-700",
+  assignment_sent: "bg-teal-100 text-teal-700",
+  confirmed:       "bg-green-100 text-green-700",
   cancelled:       "bg-red-100 text-red-700",
   reserve:         "bg-orange-100 text-orange-700",
   not_needed:      "bg-stone-100 text-stone-500",
@@ -85,7 +87,8 @@ const STATUS_LABEL: Record<string, string> = {
   new:             "Nieuw",
   review:          "Te beoordelen",
   planned:         "Ingepland",
-  assignment_sent: "Bevestiging verstuurd",
+  assignment_sent: "Gemaild",
+  confirmed:       "Bevestigd",
   cancelled:       "Afgezegd",
   reserve:         "Reserve",
   not_needed:      "Niet nodig",
@@ -185,78 +188,109 @@ function downloadCsv(rows: VolunteerSignup[], internal: boolean, suppliesLabels:
 // ─── Print helpers ────────────────────────────────────────────────────────────
 
 function openPrintWindow(rows: VolunteerSignup[], suppliesLabels: Record<string, string>) {
-  const shiftGroups: { label: string; shift: string | null }[] = [
-    { label: "Hele dag (09:00 – 16:00)", shift: "full_day" },
-    { label: "Ochtend (09:00 – 12:30)",  shift: "morning"  },
-    { label: "Middag (12:30 – 16:00)",   shift: "afternoon"},
-    { label: "Specifieke tijd / anders", shift: "specific"  },
-    { label: "Nog niet ingepland",       shift: null        },
+  const active = rows.filter(r => !["cancelled","not_needed"].includes(r.planning_status ?? ""));
+  const ts     = new Date().toLocaleString("nl-NL", { day:"numeric", month:"long", year:"numeric", hour:"2-digit", minute:"2-digit" });
+
+  const shiftGroups = [
+    { label: "Hele dag (09:00 – 16:00)",     shift: "full_day"  },
+    { label: "Ochtend (09:00 – 12:30)",       shift: "morning"   },
+    { label: "Middag (12:30 – 16:00)",        shift: "afternoon" },
+    { label: "Specifieke / aangepaste tijd",  shift: "specific"  },
+    { label: "Nog te verwerken",              shift: null        },
   ];
 
-  const planned = rows.filter(r => !["cancelled","not_needed"].includes(r.planning_status ?? ""));
+  function personRow(r: VolunteerSignup): string {
+    const tasks    = r.final_tasks?.length
+      ? r.final_tasks.map(t => TASK_LABELS_PLAIN[t] ?? t).join(", ")
+      : r.selected_tasks?.length
+        ? `Voorkeur: ${r.selected_tasks.map(t => TASK_LABELS_PLAIN[t] ?? t).join(", ")}`
+        : "—";
+    const supplies = (r.selected_supplies ?? []).map(s => suppliesLabels[s] ?? s).join(", ");
+    const bakken   = parseContrib(r.contribution_details, "Bakken");
+    const extra    = [bakken ? `Bakt: ${bakken}` : "", r.notes ?? ""].filter(Boolean).join(" · ");
+    const shift    = r.final_shift && r.final_shift !== "not_chosen"
+      ? (r.final_shift === "specific" && r.final_start_time && r.final_end_time
+          ? `${r.final_start_time.slice(0,5)}–${r.final_end_time.slice(0,5)}`
+          : ({ full_day:"Hele dag", morning:"Ochtend", afternoon:"Middag", specific:"Specifiek", not_chosen:"—" } as Record<string,string>)[r.final_shift] ?? r.final_shift)
+      : "—";
+    return `<tr>
+<td><strong>${r.full_name}</strong></td>
+<td>${r.phone ?? "—"}</td>
+<td>${shift}</td>
+<td>${tasks}</td>
+<td>${supplies || "—"}</td>
+<td style="color:#666;font-size:9pt">${extra || "—"}</td>
+</tr>`;
+  }
+
+  const TABLE_HEAD = `<table><thead><tr>
+<th>Naam</th><th>Telefoon</th><th>Tijdvak</th><th>Taak / taken</th><th>Spullen</th><th>Extra info</th>
+</tr></thead><tbody>`;
 
   let html = `<!DOCTYPE html><html lang="nl"><head><meta charset="utf-8">
 <title>Dagplanning Autowasdag</title>
 <style>
-  body { font-family: Arial, sans-serif; font-size: 11pt; margin: 20mm; color: #111; }
-  h1   { font-size: 16pt; margin-bottom: 4px; }
-  h2   { font-size: 13pt; margin-top: 20px; margin-bottom: 6px; border-bottom: 1px solid #aaa; padding-bottom: 3px; color: #1a4731; }
-  h3   { font-size: 11pt; margin-top: 14px; margin-bottom: 4px; color: #555; }
-  table{ width: 100%; border-collapse: collapse; margin-bottom: 8px; font-size: 10pt; }
-  th   { background: #f0f0f0; text-align: left; padding: 4px 8px; font-size: 9pt; font-weight: 600; border-bottom: 1px solid #ccc; }
-  td   { padding: 4px 8px; border-bottom: 1px solid #eee; vertical-align: top; }
-  .badge { display:inline-block; padding: 1px 6px; border-radius: 4px; font-size: 9pt; }
-  .planned { background:#dbeafe; color:#1e40af; }
-  .sent    { background:#dcfce7; color:#166534; }
-  .reserve { background:#fed7aa; color:#9a3412; }
-  .new     { background:#f3f4f6; color:#374151; }
+  body  { font-family: Arial, sans-serif; font-size: 10.5pt; margin: 18mm; color: #111; }
+  h1    { font-size: 16pt; margin: 0 0 2px; }
+  .meta { font-size: 9pt; color: #666; margin-bottom: 18px; }
+  h2    { font-size: 12pt; margin: 22px 0 6px; padding-bottom: 3px; border-bottom: 2px solid #1a4731; color: #1a4731; }
+  h3    { font-size: 10pt; margin: 14px 0 3px; color: #444; font-weight: 600; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 6px; font-size: 9.5pt; }
+  th    { background: #f0f4f0; text-align: left; padding: 4px 8px; font-size: 8.5pt; font-weight: 700; border-bottom: 1px solid #ccc; }
+  td    { padding: 4px 8px; border-bottom: 1px solid #eee; vertical-align: top; }
+  .section-divider { border-top: 1px dashed #ccc; margin: 24px 0 18px; }
   @page { size: A4; margin: 15mm; }
   @media print { body { margin: 0; } }
-</style></head><body>`;
+</style></head><body>
+<h1>Dagplanning Autowasdag Sionkerk Houten</h1>
+<p class="meta">Gegenereerd op ${ts} &mdash; ${active.length} actieve vrijwilligers</p>`;
 
-  html += `<h1>Dagplanning Autowasdag Sionkerk Houten</h1>
-<p style="color:#666;font-size:10pt;margin-bottom:16px;">Gegenereerd op ${new Date().toLocaleDateString("nl-NL", { day:"numeric", month:"long", year:"numeric" })} &mdash; ${planned.length} vrijwilligers</p>`;
-
+  // ── Dagplanning per tijdvak ──────────────────────────────────────────────────
+  html += `<h2>Dagplanning per tijdvak</h2>`;
   for (const sg of shiftGroups) {
-    const shiftRows = planned.filter(r => {
-      if (sg.shift === null) return !r.final_shift || r.final_shift === "not_chosen";
-      if (sg.shift === "specific") return r.final_shift === "specific";
-      return r.final_shift === sg.shift;
+    const group = active.filter(r =>
+      sg.shift === null
+        ? (!r.final_shift || r.final_shift === "not_chosen")
+        : r.final_shift === sg.shift
+    );
+    if (group.length === 0) continue;
+    html += `<h3>${sg.label} (${group.length})</h3>${TABLE_HEAD}`;
+    group.forEach(r => { html += personRow(r); });
+    html += `</tbody></table>`;
+  }
+
+  // ── Baklijst ─────────────────────────────────────────────────────────────────
+  const bakkers = active.filter(r =>
+    r.selected_tasks?.includes("bakken") || r.final_tasks?.includes("bakken")
+  );
+  if (bakkers.length > 0) {
+    html += `<div class="section-divider"></div><h2>Baklijst (${bakkers.length})</h2>
+<table><thead><tr><th>Naam</th><th>Telefoon</th><th>Wat wordt gebakken</th><th>Kosten</th></tr></thead><tbody>`;
+    bakkers.forEach(r => {
+      const bakken = parseContrib(r.contribution_details, "Bakken") ?? "—";
+      const kosten = { eigen_kosten:"Eigen kosten", vergoeding_gewenst:"Vergoeding gewenst", gesponsord:"Gesponsord", weet_ik_nog_niet:"Nog onbekend" }[r.cost_preference ?? ""] ?? "—";
+      html += `<tr><td><strong>${r.full_name}</strong></td><td>${r.phone ?? "—"}</td><td>${bakken}</td><td>${kosten}</td></tr>`;
     });
-    if (shiftRows.length === 0) continue;
+    html += `</tbody></table>`;
+  }
 
-    html += `<h2>${sg.label} &mdash; ${shiftRows.length} persoon/personen</h2>`;
-
-    const taskMap: Record<string, VolunteerSignup[]> = {};
-    for (const r of shiftRows) {
-      const tasks = r.final_tasks?.length ? r.final_tasks : ["__onbekend__"];
-      for (const t of tasks) {
-        if (!taskMap[t]) taskMap[t] = [];
-        taskMap[t].push(r);
-      }
-    }
-
-    for (const [taskKey, taskRows] of Object.entries(taskMap)) {
-      const taskLabel = taskKey === "__onbekend__" ? "Nog niet toegewezen" : (TASK_LABELS_PLAIN[taskKey] ?? taskKey);
-      html += `<h3>${taskLabel} (${taskRows.length})</h3>
-<table><thead><tr><th>Naam</th><th>Telefoon</th><th>Status</th><th>Spullen</th><th>Extra info</th></tr></thead><tbody>`;
-      for (const r of taskRows) {
-        const supplies = (r.selected_supplies ?? []).map(s => suppliesLabels[s] ?? s).join(", ");
-        const bakken   = parseContrib(r.contribution_details, "Bakken");
-        const extra    = [bakken ? `Bakt: ${bakken}` : "", r.notes ?? ""].filter(Boolean).join(" | ");
-        const badgeMap: Record<string, string> = { planned:"planned", assignment_sent:"sent", reserve:"reserve" };
-        const badgeCls = badgeMap[r.planning_status ?? ""] ?? "new";
-        const statusLbl = STATUS_LABEL[r.planning_status ?? "new"] ?? r.planning_status ?? "";
-        html += `<tr>
-  <td><strong>${r.full_name}</strong></td>
-  <td>${r.phone ?? "—"}</td>
-  <td><span class="badge ${badgeCls}">${statusLbl}</span></td>
-  <td>${supplies || "—"}</td>
-  <td style="color:#666;font-size:9pt;">${extra || "—"}</td>
-</tr>`;
-      }
-      html += `</tbody></table>`;
-    }
+  // ── Spullenlijst ─────────────────────────────────────────────────────────────
+  const spullenRows = active.filter(r =>
+    r.selected_tasks?.some(t => ["spullen","sponsoring"].includes(t)) ||
+    r.final_tasks?.some(t => ["spullen","sponsoring"].includes(t))
+  );
+  if (spullenRows.length > 0) {
+    html += `<div class="section-divider"></div><h2>Spullen &amp; Sponsoring (${spullenRows.length})</h2>
+<table><thead><tr><th>Naam</th><th>Telefoon</th><th>Type</th><th>Omschrijving</th></tr></thead><tbody>`;
+    spullenRows.forEach(r => {
+      const items   = (r.selected_supplies ?? []).map(s => suppliesLabels[s] ?? s).join(", ");
+      const anders  = parseContrib(r.contribution_details, "SpullenAnders");
+      const spons   = parseContrib(r.contribution_details, "Sponsoring");
+      const desc    = [items, anders, spons].filter(Boolean).join("; ") || "—";
+      const type    = r.selected_tasks?.filter(t => ["spullen","sponsoring"].includes(t)).map(t => TASK_LABELS_PLAIN[t] ?? t).join(", ") ?? "—";
+      html += `<tr><td><strong>${r.full_name}</strong></td><td>${r.phone ?? "—"}</td><td>${type}</td><td>${desc}</td></tr>`;
+    });
+    html += `</tbody></table>`;
   }
 
   html += `</body></html>`;
@@ -688,7 +722,11 @@ export default function VrijwilligersClient({ initialRows, suppliesOptions }: { 
                         <div className="flex gap-2 whitespace-nowrap flex-wrap">
                           <button onClick={() => openEdit(r)}
                             className="text-xs bg-green-50 text-green-700 border border-green-200 px-3 py-1.5 rounded-lg hover:bg-green-100 transition-colors">
-                            Indelen
+                            {!r.planning_status || r.planning_status === "new" || r.planning_status === "review"
+                              ? "Indelen"
+                              : r.planning_status === "cancelled" || r.planning_status === "not_needed"
+                                ? "Bekijken"
+                                : "Wijzigen"}
                           </button>
                           <button
                             onClick={() => setDeleteConfirm(r)}

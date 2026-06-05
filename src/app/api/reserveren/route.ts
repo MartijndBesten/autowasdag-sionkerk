@@ -5,6 +5,7 @@ import { PACKAGE_SLOTS } from "@/lib/timeslots";
 import type { PackageType } from "@/lib/supabase/types";
 
 const VALID_PACKAGES: PackageType[] = ["buiten_wassen", "compleet"];
+const PACKAGE_PRICES: Record<string, number> = { buiten_wassen: 7.50, compleet: 12.50 };
 
 function addMinutes(time: string, minutes: number): string {
   const [h, m] = time.split(":").map(Number);
@@ -30,12 +31,21 @@ export async function POST(req: NextRequest) {
 
     const supabase = createAdminClient() as any;
 
-    const slotsNeeded = PACKAGE_SLOTS[package_type as PackageType];
-    const { data: settings } = await supabase
+    // ── Open/gesloten check ─────────────────────────────────────────────────────
+    const { data: eventRow } = await supabase
       .from("settings").select("value").eq("key", "event").single();
-    const washBays = ((settings?.value as Record<string, unknown>)?.wash_bays as number) ?? 2;
+    const eventSettings = (eventRow?.value as Record<string, unknown>) ?? {};
+    if (eventSettings.reservations_open === false) {
+      return NextResponse.json(
+        { error: "Reserveren is op dit moment gesloten. Neem contact op met de organisatie als u nog een vraag heeft." },
+        { status: 403 }
+      );
+    }
 
-    // Check 1: huidig slot — count(*) op status ≠ cancelled (niet sum slot_count)
+    const washBays  = (eventSettings.wash_bays  as number) ?? 2;
+    const slotsNeeded = PACKAGE_SLOTS[package_type as PackageType];
+
+    // Check 1: huidig slot
     const { count: occ1 } = await supabase
       .from("car_reservations")
       .select("id", { count: "exact", head: true })
@@ -47,7 +57,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Dit tijdslot is helaas niet meer beschikbaar." }, { status: 409 });
     }
 
-    // Check 2: compleet-pakket bezet ook het volgende 20-minuten-slot
+    // Check 2: compleet-pakket bezet ook het volgende slot
     if (slotsNeeded > 1) {
       const nextTime = addMinutes(reservation_time, 20);
       const { count: occ2 } = await supabase
@@ -62,7 +72,9 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Opslaan — slot_count 1 (één auto = één wasplaats), status confirmed
+    const price          = PACKAGE_PRICES[package_type] ?? 0;
+    const extraDonation  = Number(extra_donation) || 0;
+
     const { data: reservation, error: dbErr } = await supabase
       .from("car_reservations")
       .insert({
@@ -74,7 +86,7 @@ export async function POST(req: NextRequest) {
         package_duration:  slotsNeeded * 20,
         reservation_date,
         reservation_time,
-        extra_donation:    Number(extra_donation) || 0,
+        extra_donation:    extraDonation,
         notes:             notes || null,
         slot_count:        1,
         status:            "confirmed",
@@ -87,29 +99,36 @@ export async function POST(req: NextRequest) {
     if (dbErr) throw dbErr;
 
     sendReservationEmail({
-      name: full_name, email, phone: phone || null, package: package_type, notes: notes || null,
+      name: full_name, email, phone: phone || null,
+      package: package_type,
+      date: reservation_date, time: reservation_time,
+      price, extra_donation: extraDonation,
+      notes: notes || null,
     }).catch(console.error);
 
     sendReservationConfirmation({
-      name: full_name, email, package: package_type,
+      name: full_name, email,
+      package: package_type,
       date: reservation_date, time: reservation_time,
+      price, extra_donation: extraDonation,
     }).catch(console.error);
 
-    await supabase.from("email_logs").insert({
+    // Non-blocking logging
+    supabase.from("email_logs").insert({
       to_address:     process.env.NOTIFY_EMAIL ?? "",
       subject:        `Nieuwe reservering — ${full_name}`,
       template:       "reservation_admin",
       reference_id:   reservation?.id,
       reference_type: "car_reservation",
       status:         "sent",
-    });
+    }).catch(() => {});
 
-    await supabase.from("audit_logs").insert({
+    supabase.from("audit_logs").insert({
       action:     "INSERT",
       table_name: "car_reservations",
       record_id:  reservation?.id,
       new_data:   { full_name, email, package_type, reservation_date, reservation_time },
-    });
+    }).catch(() => {});
 
     return NextResponse.json({ ok: true, id: reservation?.id });
   } catch (err) {

@@ -39,11 +39,19 @@ function row(label: string, value: string | null | undefined): string {
 
 function buildHtml(opts: {
   typeLabel: string;
+  subLabel?: string;
   accentColor: string;
   rows: [string, string | null | undefined][];
   timestamp: string;
+  footer?: string;
 }): string {
   const tableRows = opts.rows.map(([l, v]) => row(l, v)).join("");
+  const subLine   = opts.subLabel
+    ? `<p style="margin:0 0 4px;font-size:11px;color:rgba(255,255,255,.65);font-weight:600;text-transform:uppercase;letter-spacing:.1em">${opts.subLabel}</p>`
+    : "";
+  const footerExtra = opts.footer
+    ? `<p style="margin:12px 0 0;font-size:13px;color:#555;line-height:1.6">${opts.footer}</p>`
+    : "";
   return `<!DOCTYPE html>
 <html lang="nl">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
@@ -52,7 +60,7 @@ function buildHtml(opts: {
 
     <!-- Header -->
     <div style="background:${opts.accentColor};padding:24px 28px">
-      <p style="margin:0 0 4px;font-size:11px;color:rgba(255,255,255,.65);font-weight:600;text-transform:uppercase;letter-spacing:.1em">Nieuwe aanmelding</p>
+      ${subLine}
       <h1 style="margin:0;font-size:22px;font-weight:800;color:#fff">${opts.typeLabel}</h1>
     </div>
 
@@ -63,6 +71,7 @@ function buildHtml(opts: {
 
     <!-- Footer -->
     <div style="padding:16px 28px;background:#f8f6f1;border-top:1px solid #eee">
+      ${footerExtra}
       <p style="margin:0;font-size:12px;color:#999">
         Ontvangen op ${opts.timestamp} · Autowasdag Sionkerk Houten
       </p>
@@ -112,29 +121,43 @@ export async function sendReservationEmail(data: {
   email: string;
   phone: string | null;
   package: string;
+  date: string;
+  time: string;
+  price?: number;
+  extra_donation?: number;
   notes: string | null;
 }): Promise<SendResult> {
   const packageLabels: Record<string, string> = {
-    buiten_wassen: "Buiten wassen — €7,50",
-    compleet:      "Compleet (buiten + binnen) — €12,50",
+    buiten_wassen: "Buiten wassen",
+    compleet:      "Compleet (buiten + binnen)",
     basis:         "Basis (buitenwas)",
   };
 
+  const priceStr = data.price != null ? `€${data.price.toFixed(2).replace(".", ",")}` : null;
+  const donationStr = data.extra_donation && data.extra_donation > 0
+    ? `€${data.extra_donation.toFixed(2).replace(".", ",")}`
+    : null;
+
   const html = buildHtml({
-    typeLabel:    "Autowas-reservering",
-    accentColor:  "#155237",
+    typeLabel:   "Nieuwe reservering",
+    subLabel:    "Organisatie-notificatie",
+    accentColor: "#155237",
     rows: [
-      ["Naam",         data.name],
-      ["E-mail",       data.email],
-      ["Telefoon",     data.phone],
-      ["Pakket",       packageLabels[data.package] ?? data.package],
-      ["Opmerkingen",  data.notes],
-      ["Ingediend op", now()],
+      ["Naam",            data.name],
+      ["E-mail",          data.email],
+      ["Telefoon",        data.phone],
+      ["Pakket",          packageLabels[data.package] ?? data.package],
+      ["Prijs",           priceStr],
+      ["Extra donatie",   donationStr],
+      ["Datum",           data.date],
+      ["Tijdslot",        `${data.time} uur`],
+      ["Opmerkingen",     data.notes],
+      ["Ingediend op",    now()],
     ],
     timestamp: now(),
   });
 
-  return send(`Nieuwe reservering — ${data.name}`, html);
+  return send(`Nieuwe reservering — ${data.name} (${data.date} ${data.time})`, html);
 }
 
 // ── Bevestigingsmail naar bezoeker ───────────────────────────────────────────
@@ -145,6 +168,8 @@ export async function sendReservationConfirmation(data: {
   package: string;
   date: string;
   time: string;
+  price?: number;
+  extra_donation?: number;
 }): Promise<SendResult> {
   const packageLabels: Record<string, string> = {
     buiten_wassen: "Buiten wassen",
@@ -158,17 +183,25 @@ export async function sendReservationConfirmation(data: {
     return s.charAt(0).toUpperCase() + s.slice(1);
   }
 
+  const priceStr = data.price != null ? `€${data.price.toFixed(2).replace(".", ",")}` : null;
+  const donationStr = data.extra_donation && data.extra_donation > 0
+    ? `€${data.extra_donation.toFixed(2).replace(".", ",")}`
+    : null;
+
   const html = buildHtml({
-    typeLabel:   "Uw reservering is bevestigd",
+    typeLabel:   "Uw reservering",
     accentColor: "#155237",
     rows: [
-      ["Naam",        data.name],
-      ["Pakket",      packageLabels[data.package] ?? data.package],
-      ["Datum",       formatDate(data.date)],
-      ["Tijdslot",    `${data.time} uur`],
-      ["",            "Uw reservering is bevestigd. Kom 10 minuten voor het gekozen tijdslot naar de autowasdag. We zien u graag op zaterdag 11 juli."],
+      ["Naam",          data.name],
+      ["Pakket",        packageLabels[data.package] ?? data.package],
+      ["Prijs",         priceStr],
+      ["Extra donatie", donationStr],
+      ["Datum",         formatDate(data.date)],
+      ["Tijdslot",      `${data.time} uur`],
+      ["Betaling",      "Aan de kassa bij aankomst (contant of QR)"],
     ],
     timestamp: now(),
+    footer: "Kom 10 minuten voor het gekozen tijdslot naar de autowasdag op het terrein van de Sionkerk, Eikenhout 221, Houten.<br>Moet u uw reservering wijzigen of annuleren? Reageer dan op deze bevestigingsmail of neem contact op met de organisatie.",
   });
 
   const resend = getResend();

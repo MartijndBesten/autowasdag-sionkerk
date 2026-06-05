@@ -5,6 +5,7 @@ import Navigation from "@/components/Navigation";
 import ReserverenForm from "@/components/forms/ReserverenPageForm";
 import ModalRoot from "@/components/ModalRoot";
 import { getActiveAction, getEventDate, formatEventDate } from "@/lib/event";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export const metadata: Metadata = {
   title: "Reserveren — Autowasdag Sionkerk Houten",
@@ -15,6 +16,17 @@ export default async function ReserverenPage() {
   const action        = await getActiveAction();
   const eventDate     = action?.event_date ?? await getEventDate();
   const dateFormatted = formatEventDate(eventDate);
+
+  // Open/gesloten check — lees uit settings key "event"
+  let reservationsOpen = true;
+  try {
+    const supabase = createAdminClient() as any;
+    const { data } = await supabase
+      .from("settings").select("value").eq("key", "event").single();
+    if ((data?.value as Record<string, unknown>)?.reservations_open === false) {
+      reservationsOpen = false;
+    }
+  } catch { /* val terug op open */ }
 
   return (
     <main className="min-h-screen" style={{ background: "linear-gradient(160deg, #faf6e8 0%, #f5edd6 60%, #e8f5ef 100%)" }}>
@@ -66,11 +78,26 @@ export default async function ReserverenPage() {
           </div>
         </div>
 
-        {/* Formulier — Suspense vereist door useSearchParams */}
+        {/* Formulier of gesloten-melding */}
         <div className="bg-white rounded-3xl shadow-[0_4px_24px_rgba(0,0,0,0.07)] p-8">
-          <Suspense fallback={<p className="text-gray-400 text-sm py-4">Formulier laden…</p>}>
-            <ReserverenForm eventDate={eventDate} />
-          </Suspense>
+          {reservationsOpen ? (
+            <Suspense fallback={<p className="text-gray-400 text-sm py-4">Formulier laden…</p>}>
+              <ReserverenForm eventDate={eventDate} />
+            </Suspense>
+          ) : (
+            <div className="py-8 text-center space-y-4">
+              <div className="w-14 h-14 rounded-full bg-stone-100 flex items-center justify-center mx-auto">
+                <svg className="w-7 h-7 text-stone-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m0 0v2m0-2h2m-2 0H10m2-6V5" />
+                  <circle cx="12" cy="12" r="10" />
+                </svg>
+              </div>
+              <h2 className="font-bold text-gray-900 text-xl">Reserveren is gesloten</h2>
+              <p className="text-gray-500 text-sm max-w-xs mx-auto">
+                Reserveren is op dit moment gesloten. Neem contact op met de organisatie als u nog een vraag heeft.
+              </p>
+            </div>
+          )}
         </div>
       </div>
 

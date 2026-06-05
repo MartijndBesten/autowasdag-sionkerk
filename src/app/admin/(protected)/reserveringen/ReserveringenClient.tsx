@@ -4,13 +4,13 @@ import { useState, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { CarReservation, ReservationStatus, PaymentStatus } from "@/lib/supabase/types";
 
-const STATUS_COLORS: Record<ReservationStatus, string> = {
+const STATUS_COLORS: Record<string, string> = {
   pending:   "bg-yellow-100 text-yellow-800",
   confirmed: "bg-blue-100 text-blue-800",
   completed: "bg-green-100 text-green-700",
   cancelled: "bg-red-100 text-red-700",
 };
-const PAYMENT_COLORS: Record<PaymentStatus, string> = {
+const PAYMENT_COLORS: Record<string, string> = {
   unpaid:        "bg-orange-100 text-orange-700",
   paid_cash:     "bg-green-100 text-green-700",
   paid_qr:       "bg-green-100 text-green-700",
@@ -41,19 +41,41 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 const PAYMENT_LABELS: Record<string, string> = {
-  unpaid:        "Nog niet betaald",
-  paid_cash:     "Contant betaald",
-  paid_qr:       "QR betaald",
+  unpaid:        "Nog te betalen",
+  paid_cash:     "Betaald contant",
+  paid_qr:       "Betaald via QR",
   donated_extra: "Extra donatie",
 };
+
+// dd-mm-jjjj voor weergave
+function fmtDate(dateStr: string): string {
+  if (!dateStr) return "—";
+  const [y, m, d] = dateStr.split("-");
+  if (!y || !m || !d) return dateStr;
+  return `${d}-${m}-${y}`;
+}
+
+// Zaterdag 11 juli voor compacte weergave
+function fmtDateShort(dateStr: string): string {
+  if (!dateStr) return "—";
+  const [y, m, d] = dateStr.split("-").map(Number);
+  if (!y) return dateStr;
+  const s = new Date(y, m - 1, d).toLocaleDateString("nl-NL", { weekday: "short", day: "numeric", month: "short" });
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
 
 function fmt(v: string | number | null | undefined): string {
   if (v == null) return "";
   return String(v).replace(/"/g, "'");
 }
 
+function csvCell(v: string | number | null | undefined): string {
+  return `"${fmt(v)}"`;
+}
+
 function exportCSV(rows: CarReservation[]) {
-  const header = [
+  const SEP = ";";
+  const headers = [
     "Naam", "E-mail", "Telefoon", "Kenteken",
     "Pakket", "Prijs (€)", "Extra donatie (€)",
     "Datum", "Tijdstip",
@@ -68,14 +90,14 @@ function exportCSV(rows: CarReservation[]) {
     fmt(PACKAGE_LABELS[r.package_type] ?? r.package_type),
     fmt((PACKAGE_PRICES[r.package_type] ?? 0).toFixed(2)),
     fmt((r.extra_donation ?? 0).toFixed(2)),
-    fmt(r.reservation_date),
+    fmt(fmtDate(r.reservation_date)),
     fmt(String(r.reservation_time).slice(0, 5)),
     fmt(STATUS_LABELS[r.status] ?? r.status),
     fmt(PAYMENT_LABELS[r.payment_status] ?? r.payment_status),
     fmt(r.notes),
-  ].map(v => `"${v}"`).join(","));
+  ].map(csvCell).join(SEP));
 
-  const csv  = "﻿" + [header.join(","), ...lines].join("\n");
+  const csv  = "﻿" + [headers.map(csvCell).join(SEP), ...lines].join("\r\n");
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement("a");
@@ -84,9 +106,10 @@ function exportCSV(rows: CarReservation[]) {
 }
 
 export default function ReserveringenClient({ initialData }: { initialData: CarReservation[] }) {
-  const [data, setData]       = useState<CarReservation[]>(initialData);
-  const [search, setSearch]   = useState("");
-  const [filterStatus, setFS] = useState<string>("all");
+  const [data, setData]         = useState<CarReservation[]>(initialData);
+  const [search, setSearch]     = useState("");
+  const [filterStatus, setFS]   = useState<string>("all");
+  const [deleteConfirm, setDC]  = useState<CarReservation | null>(null);
   const supabase = createClient();
 
   const filtered = useMemo(() => data.filter(r => {
@@ -106,27 +129,28 @@ export default function ReserveringenClient({ initialData }: { initialData: CarR
   [filtered]);
 
   async function updateStatus(id: string, status: ReservationStatus) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (supabase as any).from("car_reservations").update({ status }).eq("id", id);
     setData(prev => prev.map(r => r.id === id ? { ...r, status } : r));
   }
 
   async function updatePayment(id: string, payment_status: PaymentStatus) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (supabase as any).from("car_reservations").update({ payment_status }).eq("id", id);
     setData(prev => prev.map(r => r.id === id ? { ...r, payment_status } : r));
   }
 
-  async function deleteRow(id: string) {
-    if (!confirm("Verwijder deze reservering?")) return;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase as any).from("car_reservations").delete().eq("id", id);
-    setData(prev => prev.filter(r => r.id !== id));
+  async function softDelete(r: CarReservation) {
+    // Soft-delete: zet status op cancelled en sla op in admin_notes
+    await (supabase as any)
+      .from("car_reservations")
+      .update({ status: "cancelled", admin_notes: `__verwijderd__ ${new Date().toISOString()}` })
+      .eq("id", r.id);
+    setData(prev => prev.filter(x => x.id !== r.id));
+    setDC(null);
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Reserveringen</h1>
           <p className="text-gray-400 text-sm">
@@ -168,7 +192,7 @@ export default function ReserveringenClient({ initialData }: { initialData: CarR
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-stone-100">
               <tr>
-                {["Naam","Pakket","Datum","Tijd","Telefoon","Kenteken","Status","Betaling","Acties"].map(h => (
+                {["Naam","Pakket / Prijs","Datum","Tijd","Telefoon","Kenteken","Status","Betaling","Acties"].map(h => (
                   <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide whitespace-nowrap">{h}</th>
                 ))}
               </tr>
@@ -179,22 +203,23 @@ export default function ReserveringenClient({ initialData }: { initialData: CarR
                   <td className="px-4 py-3">
                     <p className="font-medium text-gray-900">{r.full_name}</p>
                     <p className="text-xs text-gray-400">{r.email}</p>
+                    {r.notes && <p className="text-xs text-gray-300 italic mt-0.5">{r.notes}</p>}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
                     <p className="text-gray-700 font-medium">{PACKAGE_LABELS[r.package_type] ?? r.package_type}</p>
                     <p className="text-xs text-gray-400">
                       €{(PACKAGE_PRICES[r.package_type] ?? 0).toFixed(2).replace(".", ",")}
-                      {r.extra_donation > 0 && ` + €${r.extra_donation.toFixed(2).replace(".", ",")} donatie`}
+                      {r.extra_donation > 0 && <span className="text-purple-600"> + €{r.extra_donation.toFixed(2).replace(".", ",")} donatie</span>}
                     </p>
                   </td>
-                  <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{r.reservation_date}</td>
+                  <td className="px-4 py-3 text-gray-600 whitespace-nowrap font-medium">{fmtDateShort(r.reservation_date)}</td>
                   <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{String(r.reservation_time).slice(0,5)}</td>
-                  <td className="px-4 py-3 text-gray-500">{r.phone ?? "—"}</td>
+                  <td className="px-4 py-3 text-gray-500 text-xs">{r.phone ?? "—"}</td>
                   <td className="px-4 py-3 text-gray-500 font-mono text-xs">{r.license_plate ?? "—"}</td>
                   <td className="px-4 py-3">
                     <select value={r.status}
                       onChange={e => updateStatus(r.id, e.target.value as ReservationStatus)}
-                      className={`text-xs font-semibold px-2 py-1 rounded-full border-0 cursor-pointer ${STATUS_COLORS[r.status]}`}>
+                      className={`text-xs font-semibold px-2 py-1 rounded-full border-0 cursor-pointer ${STATUS_COLORS[r.status] ?? "bg-gray-100 text-gray-600"}`}>
                       <option value="pending">In behandeling</option>
                       <option value="confirmed">Bevestigd</option>
                       <option value="completed">Voltooid</option>
@@ -204,15 +229,15 @@ export default function ReserveringenClient({ initialData }: { initialData: CarR
                   <td className="px-4 py-3">
                     <select value={r.payment_status}
                       onChange={e => updatePayment(r.id, e.target.value as PaymentStatus)}
-                      className={`text-xs font-semibold px-2 py-1 rounded-full border-0 cursor-pointer ${PAYMENT_COLORS[r.payment_status]}`}>
-                      <option value="unpaid">Niet betaald</option>
-                      <option value="paid_cash">Contant</option>
-                      <option value="paid_qr">QR</option>
-                      <option value="donated_extra">Donatie</option>
+                      className={`text-xs font-semibold px-2 py-1 rounded-full border-0 cursor-pointer ${PAYMENT_COLORS[r.payment_status] ?? "bg-gray-100 text-gray-600"}`}>
+                      <option value="unpaid">Nog te betalen</option>
+                      <option value="paid_cash">Betaald contant</option>
+                      <option value="paid_qr">Betaald via QR</option>
+                      <option value="donated_extra">Extra donatie</option>
                     </select>
                   </td>
                   <td className="px-4 py-3">
-                    <button onClick={() => deleteRow(r.id)}
+                    <button onClick={() => setDC(r)}
                       className="text-red-400 hover:text-red-600 text-xs transition-colors">
                       Verwijder
                     </button>
@@ -226,6 +251,33 @@ export default function ReserveringenClient({ initialData }: { initialData: CarR
           </table>
         </div>
       </div>
+
+      {/* Verwijder-bevestiging modal */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          onClick={e => { if (e.target === e.currentTarget) setDC(null); }}>
+          <div className="absolute inset-0 bg-black/40" />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-4">
+            <h2 className="font-bold text-gray-900 text-lg">Reservering verwijderen</h2>
+            <p className="text-gray-600 text-sm">
+              Weet u zeker dat u de reservering van <strong>{deleteConfirm.full_name}</strong> wilt verwijderen?
+            </p>
+            <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+              De reservering wordt als &ldquo;Geannuleerd&rdquo; gemarkeerd en verborgen in het overzicht. U kunt dit terugvinden via het filter &ldquo;Geannuleerd&rdquo;.
+            </p>
+            <div className="flex gap-3 pt-2">
+              <button onClick={() => softDelete(deleteConfirm)}
+                className="flex-1 bg-red-600 text-white font-semibold rounded-full py-2.5 hover:bg-red-700 transition-colors">
+                Ja, verwijderen
+              </button>
+              <button onClick={() => setDC(null)}
+                className="flex-1 border border-stone-200 rounded-full py-2.5 text-gray-600 hover:bg-stone-50 transition-colors text-sm">
+                Annuleren
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

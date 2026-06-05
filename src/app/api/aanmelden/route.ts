@@ -4,7 +4,6 @@ import { sendVolunteerEmail, sendVolunteerConfirmation } from "@/lib/email";
 import type { AvailabilityType } from "@/lib/supabase/types";
 
 const VALID_AVAIL: AvailabilityType[] = ["full_day", "morning", "afternoon"];
-
 const VALID_COST = ["eigen_kosten", "vergoeding_gewenst", "gesponsord", "weet_ik_nog_niet"];
 
 export async function POST(req: NextRequest) {
@@ -14,6 +13,39 @@ export async function POST(req: NextRequest) {
 
     if (!name || !email) {
       return NextResponse.json({ error: "Naam en e-mail zijn verplicht." }, { status: 400 });
+    }
+
+    // Telefoon verplicht
+    if (!phone || !String(phone).trim()) {
+      return NextResponse.json({ error: "Telefoonnummer is verplicht." }, { status: 400 });
+    }
+
+    const supabase = createAdminClient() as any;
+
+    // ── Open/gesloten check ─────────────────────────────────────────────────────
+    const { data: eventRow } = await supabase
+      .from("settings").select("value").eq("key", "event").single();
+    const eventSettings = (eventRow?.value as Record<string, unknown>) ?? {};
+    if (eventSettings.volunteers_open === false) {
+      return NextResponse.json(
+        { error: "Aanmelden als vrijwilliger is op dit moment gesloten. Neem contact op met de organisatie als u nog een vraag heeft." },
+        { status: 403 }
+      );
+    }
+
+    // ── Dubbele aanmelding voorkomen (case-insensitive, getrimmed) ──────────────
+    const normalizedEmail = String(email).trim().toLowerCase();
+    const { count: existing } = await supabase
+      .from("volunteer_signups")
+      .select("id", { count: "exact", head: true })
+      .ilike("email", normalizedEmail)
+      .eq("is_deleted", false);
+
+    if ((existing ?? 0) > 0) {
+      return NextResponse.json(
+        { error: "Er bestaat al een aanmelding met dit e-mailadres. Wilt u iets wijzigen? Neem dan contact op met de organisatie." },
+        { status: 409 }
+      );
     }
 
     const taskList: string[] = Array.isArray(tasks) ? tasks : [];
@@ -31,8 +63,8 @@ export async function POST(req: NextRequest) {
     }
     if (taskList.includes("spullen")) {
       const supplies: string[] = Array.isArray(selected_supplies) ? selected_supplies : [];
-      const andersText      = details.split("\n").find(l => l.startsWith("SpullenAnders:"))?.replace("SpullenAnders:", "").trim() ?? "";
-      const toelichtingText = details.split("\n").find(l => l.startsWith("SpullenToelichting:"))?.replace("SpullenToelichting:", "").trim() ?? "";
+      const andersText       = details.split("\n").find(l => l.startsWith("SpullenAnders:"))?.replace("SpullenAnders:", "").trim() ?? "";
+      const toelichtingText  = details.split("\n").find(l => l.startsWith("SpullenToelichting:"))?.replace("SpullenToelichting:", "").trim() ?? "";
       if (supplies.length === 0 && !andersText && !toelichtingText) {
         return NextResponse.json({ error: "Kies minimaal één spullenoptie of vul een toelichting in." }, { status: 400 });
       }
@@ -47,15 +79,14 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const supabase = createAdminClient() as any;
     const safeAvail: AvailabilityType = VALID_AVAIL.includes(availability) ? availability : "full_day";
 
     const { data: record, error: dbErr } = await supabase
       .from("volunteer_signups")
       .insert({
         full_name:            name,
-        email,
-        phone:                phone || null,
+        email:                normalizedEmail,
+        phone:                String(phone).trim(),
         availability:         safeAvail,
         selected_tasks:       taskList,
         contribution_details: contribution_details || null,
@@ -71,7 +102,7 @@ export async function POST(req: NextRequest) {
     if (dbErr) throw dbErr;
 
     sendVolunteerEmail({
-      name, email, phone: phone || null,
+      name, email: normalizedEmail, phone: String(phone).trim(),
       availability: safeAvail, tasks: taskList,
       contribution_details: contribution_details || null,
       cost_preference: taskList.includes("bakken") ? (cost_preference || null) : null,
@@ -79,21 +110,25 @@ export async function POST(req: NextRequest) {
     }).catch(console.error);
 
     sendVolunteerConfirmation({
-      name, email,
+      name, email: normalizedEmail,
       availability: safeAvail, tasks: taskList,
       contribution_details: contribution_details || null,
       cost_preference: taskList.includes("bakken") ? (cost_preference || null) : null,
     }).catch(console.error);
 
-    await supabase.from("email_logs").insert({
-      to_address: process.env.NOTIFY_EMAIL ?? "", subject: `Nieuwe vrijwilliger — ${name}`,
-      template: "volunteer_admin", reference_id: record?.id, reference_type: "volunteer_signup", status: "sent",
-    });
+    supabase.from("email_logs").insert({
+      to_address: process.env.NOTIFY_EMAIL ?? "",
+      subject:    `Nieuwe vrijwilliger — ${name}`,
+      template:   "volunteer_admin",
+      reference_id:   record?.id,
+      reference_type: "volunteer_signup",
+      status:     "sent",
+    }).catch(() => {});
 
-    await supabase.from("audit_logs").insert({
+    supabase.from("audit_logs").insert({
       action: "INSERT", table_name: "volunteer_signups", record_id: record?.id,
-      new_data: { full_name: name, email, selected_tasks: taskList, contribution_details, cost_preference },
-    });
+      new_data: { full_name: name, email: normalizedEmail, selected_tasks: taskList, contribution_details, cost_preference },
+    }).catch(() => {});
 
     return NextResponse.json({ ok: true });
   } catch (err) {
