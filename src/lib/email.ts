@@ -17,6 +17,15 @@ function getNotifyTo(): string {
 
 const FROM = process.env.EMAIL_FROM ?? "Autowasdag <onboarding@resend.dev>";
 
+// Waarschuwing bij gebruik van Resend-testdomein
+if (!process.env.EMAIL_FROM) {
+  console.warn(
+    "[email] EMAIL_FROM is NIET ingesteld. Resend testdomein (onboarding@resend.dev) " +
+    "bezorgt ALLEEN bij het Resend-accountadres. Stel EMAIL_FROM in Vercel in om " +
+    "bevestigingsmails naar alle ontvangers te sturen."
+  );
+}
+
 function getResend(): Resend | null {
   const key = process.env.RESEND_API_KEY;
   if (!key || key.startsWith("re_VERVANG")) {
