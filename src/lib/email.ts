@@ -341,7 +341,8 @@ export async function sendVolunteerConfirmation(data: {
   const resend = getResend();
   if (!resend) return { ok: true };
 
-  console.log("[email] vrijwilliger bevestiging versturen naar:", data.email, "| from:", FROM);
+  // ── MAIL-TRACE stap 4: ontvanger doorgegeven aan Resend ──────────────────────
+  console.log("[MAIL-TRACE] 4. Resend-aanroep — from:", FROM, "| to:", data.email);
 
   const { data: sent, error } = await resend.emails.send({
     from:    FROM,
@@ -349,6 +350,9 @@ export async function sendVolunteerConfirmation(data: {
     subject: "Bedankt voor je aanmelding voor de Autowasdag",
     html,
   });
+
+  // ── MAIL-TRACE stap 5: volledige Resend-response ──────────────────────────
+  console.log("[MAIL-TRACE] 5. Resend-response — data:", JSON.stringify(sent), "| error:", JSON.stringify(error));
 
   if (error) {
     console.error("[email] Vrijwilliger bevestiging mislukt — to:", data.email, "| from:", FROM, "| fout:", JSON.stringify(error));

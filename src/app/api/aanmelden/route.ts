@@ -19,7 +19,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Telefoonnummer is verplicht zodat we je op de dag zelf kunnen bereiken." }, { status: 400 });
     }
 
+    // ── MAIL-TRACE stap 1: e-mail ontvangen uit formulier ───────────────────────
+    console.log("[MAIL-TRACE] 1. formulier-email ontvangen:", JSON.stringify(email));
     const normalizedEmail = String(email).trim().toLowerCase();
+    console.log("[MAIL-TRACE] 1b. genormaliseerd:", normalizedEmail);
+
     const supabase = createAdminClient() as any;
 
     // ── Open/gesloten check ────────────────────────────────────────────────────
@@ -99,10 +103,10 @@ export async function POST(req: NextRequest) {
       throw dbErr;
     }
 
-    console.log("[aanmelden] insert gelukt id:", record?.id);
+    // ── MAIL-TRACE stap 2: e-mail opgeslagen in database ──────────────────────
+    console.log("[MAIL-TRACE] 2. opgeslagen in DB id:", record?.id, "email in record:", normalizedEmail);
 
     // ── Mails versturen (awaited binnen de request-lifetime) ──────────────────
-    // Elk in eigen try-catch: mailfout blokkeert de 200-response NIET.
     try {
       await sendVolunteerEmail({
         name, email: normalizedEmail, phone: String(phone).trim(),
@@ -114,6 +118,8 @@ export async function POST(req: NextRequest) {
       console.log("[aanmelden] admin mail verstuurd");
     } catch (e) { console.error("[aanmelden] admin mail fout:", e); }
 
+    // ── MAIL-TRACE stap 3: e-mail doorgegeven aan sendVolunteerConfirmation ───
+    console.log("[MAIL-TRACE] 3. doorsturen naar sendVolunteerConfirmation:", normalizedEmail);
     try {
       await sendVolunteerConfirmation({
         name, email: normalizedEmail,
