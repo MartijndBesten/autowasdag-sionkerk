@@ -332,7 +332,9 @@ export async function sendVolunteerConfirmation(data: {
   const resend = getResend();
   if (!resend) return { ok: true };
 
-  const { error } = await resend.emails.send({
+  console.log("[email] vrijwilliger bevestiging versturen naar:", data.email, "| from:", FROM);
+
+  const { data: sent, error } = await resend.emails.send({
     from:    FROM,
     to:      data.email,
     subject: "Bedankt voor je aanmelding voor de Autowasdag",
@@ -340,9 +342,10 @@ export async function sendVolunteerConfirmation(data: {
   });
 
   if (error) {
-    console.error("[email] Vrijwilliger bevestiging mislukt:", error);
+    console.error("[email] Vrijwilliger bevestiging mislukt — to:", data.email, "| from:", FROM, "| fout:", JSON.stringify(error));
     return { ok: false, error: error.message };
   }
+  console.log("[email] Vrijwilliger bevestiging verstuurd — id:", sent?.id);
   return { ok: true };
 }
 
