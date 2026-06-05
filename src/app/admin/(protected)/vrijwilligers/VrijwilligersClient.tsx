@@ -92,7 +92,6 @@ const COST_LABELS: Record<string, string> = {
   weet_ik_nog_niet:   "Weet ik nog niet",
 };
 
-
 function parseContrib(details: string | null, key: string): string | null {
   if (!details) return null;
   const line = details.split("\n").find(l => l.toLowerCase().startsWith(key.toLowerCase() + ":"));
@@ -125,24 +124,20 @@ export default function VrijwilligersClient({ initialRows, suppliesOptions }: { 
     final_start_time: "", final_end_time: "",
     internal_note: "", planning_status: "new",
   });
-  const [saving,         setSaving]         = useState(false);
-  const [emailSending,   setEmailSending]   = useState<string | null>(null);
-  const [bulkSending,    setBulkSending]    = useState<string | null>(null);
-  const [emailError,     setEmailError]     = useState<string | null>(null);
-  const [saveError,      setSaveError]      = useState<string | null>(null);
-  const [deleteConfirm,  setDeleteConfirm]  = useState<VolunteerSignup | null>(null);
-  const [deleting,       setDeleting]       = useState(false);
-  const [deleteError,    setDeleteError]    = useState<string | null>(null);
-  const [deleteSuccess,  setDeleteSuccess]  = useState<string | null>(null);
+  const [saving,        setSaving]        = useState(false);
+  const [saveError,     setSaveError]     = useState<string | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<VolunteerSignup | null>(null);
+  const [deleting,      setDeleting]      = useState(false);
+  const [deleteError,   setDeleteError]   = useState<string | null>(null);
+  const [deleteSuccess, setDeleteSuccess] = useState<string | null>(null);
 
   // Filters
-  const [fStatus,      setFStatus]      = useState("");
-  const [fTask,        setFTask]        = useState("");
-  const [fFinalTask,   setFFinalTask]   = useState("");
+  const [fStatus,        setFStatus]        = useState("");
+  const [fTask,          setFTask]          = useState("");
+  const [fFinalTask,     setFFinalTask]     = useState("");
   const [fOnlyUnplanned, setFOnlyUnplanned] = useState(false);
-  const [fOnlyNoEmail, setFOnlyNoEmail] = useState(false);
-  const [fBakkers,     setFBakkers]     = useState(false);
-  const [fSpullen,     setFSpullen]     = useState(false);
+  const [fBakkers,       setFBakkers]       = useState(false);
+  const [fSpullen,       setFSpullen]       = useState(false);
 
   function openEdit(v: VolunteerSignup) {
     setEditVolunteer(v);
@@ -202,55 +197,6 @@ export default function VrijwilligersClient({ initialRows, suppliesOptions }: { 
     setDeleting(false);
   }
 
-  async function handleBulkSend(task: string, group: VolunteerSignup[]) {
-    const unsent = group.filter(v => !v.assignment_email_sent);
-    if (unsent.length === 0) return;
-    setBulkSending(task);
-    setEmailError(null);
-    try {
-      const res = await fetch("/api/vrijwilligers/bulk-indelingsmail", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ids: unsent.map(v => v.id) }),
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? "Fout");
-      const sentAt = json.sent_at ?? new Date().toISOString();
-      const sentIds = new Set(
-        (json.results as { id: string; ok: boolean }[]).filter(r => r.ok).map(r => r.id)
-      );
-      setRows(prev => prev.map(r => sentIds.has(r.id) ? {
-        ...r,
-        planning_status:          "assignment_sent" as PlanningStatus,
-        assignment_email_sent:    true,
-        assignment_email_sent_at: sentAt,
-      } : r));
-    } catch (err) {
-      setEmailError(err instanceof Error ? err.message : "Bulk verzenden mislukt.");
-    }
-    setBulkSending(null);
-  }
-
-  async function handleSendEmail(v: VolunteerSignup) {
-    setEmailSending(v.id);
-    setEmailError(null);
-    try {
-      const res = await fetch(`/api/vrijwilligers/${v.id}/indelingsmail`, { method: "POST" });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? "Fout");
-      const sentAt = json.sent_at ?? new Date().toISOString();
-      setRows(rows.map(r => r.id === v.id ? {
-        ...r,
-        planning_status:          "assignment_sent" as PlanningStatus,
-        assignment_email_sent:    true,
-        assignment_email_sent_at: sentAt,
-      } : r));
-    } catch (err) {
-      setEmailError(`${v.full_name}: ${err instanceof Error ? err.message : "Fout"}`);
-    }
-    setEmailSending(null);
-  }
-
   // ─── Filtered rows ──────────────────────────────────────────────────────────
 
   const filtered = useMemo(() => rows.filter(r => {
@@ -258,12 +204,11 @@ export default function VrijwilligersClient({ initialRows, suppliesOptions }: { 
     if (fTask && !r.selected_tasks?.includes(fTask)) return false;
     if (fFinalTask && !r.final_tasks?.includes(fFinalTask)) return false;
     if (fOnlyUnplanned && r.final_tasks?.length > 0) return false;
-    if (fOnlyNoEmail && r.assignment_email_sent) return false;
     if (fBakkers && !r.selected_tasks?.includes("bakken") && !r.final_tasks?.includes("bakken")) return false;
     if (fSpullen && !r.selected_tasks?.some(t => ["spullen","sponsoring"].includes(t)) &&
                    !r.final_tasks?.some(t => ["spullen","sponsoring"].includes(t))) return false;
     return true;
-  }), [rows, fStatus, fTask, fFinalTask, fOnlyUnplanned, fOnlyNoEmail, fBakkers, fSpullen]);
+  }), [rows, fStatus, fTask, fFinalTask, fOnlyUnplanned, fBakkers, fSpullen]);
 
   // ─── Baklijst ───────────────────────────────────────────────────────────────
 
@@ -316,13 +261,6 @@ export default function VrijwilligersClient({ initialRows, suppliesOptions }: { 
           <p className="text-gray-400 text-sm">{rows.length} aanmeldingen</p>
         </div>
       </div>
-
-      {emailError && (
-        <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-2 text-red-600 text-sm flex items-center justify-between">
-          {emailError}
-          <button onClick={() => setEmailError(null)} className="ml-4 text-red-400 hover:text-red-700">✕</button>
-        </div>
-      )}
 
       {deleteSuccess && (
         <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-2 text-green-700 text-sm flex items-center justify-between">
@@ -381,10 +319,6 @@ export default function VrijwilligersClient({ initialRows, suppliesOptions }: { 
                 Nog niet ingepland
               </label>
               <label className="flex items-center gap-2 text-xs text-gray-600 cursor-pointer">
-                <input type="checkbox" checked={fOnlyNoEmail} onChange={e => setFOnlyNoEmail(e.target.checked)} className="rounded" />
-                Bevestiging niet verstuurd
-              </label>
-              <label className="flex items-center gap-2 text-xs text-gray-600 cursor-pointer">
                 <input type="checkbox" checked={fBakkers} onChange={e => setFBakkers(e.target.checked)} className="rounded" />
                 Alleen bakkers
               </label>
@@ -403,7 +337,7 @@ export default function VrijwilligersClient({ initialRows, suppliesOptions }: { 
               <table className="w-full text-sm">
                 <thead className="bg-gray-50 border-b border-stone-100">
                   <tr>
-                    {["Naam","Beschikbaarheid","Opgegeven voorkeuren","Definitieve taak","Tijd/dagdeel","Status","Mail","Ingediend","Acties"].map(h => (
+                    {["Naam","Beschikbaarheid","Opgegeven voorkeuren","Definitieve taak","Tijd/dagdeel","Status","Ingediend","Acties"].map(h => (
                       <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide whitespace-nowrap">{h}</th>
                     ))}
                   </tr>
@@ -457,15 +391,6 @@ export default function VrijwilligersClient({ initialRows, suppliesOptions }: { 
                           {STATUS_LABEL[r.planning_status ?? "new"] ?? r.planning_status}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-xs whitespace-nowrap">
-                        {r.assignment_email_sent ? (
-                          <span className="text-green-600">
-                            ✓ {r.assignment_email_sent_at ? new Date(r.assignment_email_sent_at).toLocaleDateString("nl-NL") : "verzonden"}
-                          </span>
-                        ) : (
-                          <span className="text-gray-300">—</span>
-                        )}
-                      </td>
                       <td className="px-4 py-3 text-xs text-gray-400 whitespace-nowrap">
                         {new Date(r.created_at).toLocaleDateString("nl-NL")}
                       </td>
@@ -474,12 +399,6 @@ export default function VrijwilligersClient({ initialRows, suppliesOptions }: { 
                           <button onClick={() => openEdit(r)}
                             className="text-xs bg-green-50 text-green-700 border border-green-200 px-3 py-1.5 rounded-lg hover:bg-green-100 transition-colors">
                             Indelen
-                          </button>
-                          <button
-                            onClick={() => handleSendEmail(r)}
-                            disabled={emailSending === r.id}
-                            className="text-xs bg-blue-50 text-blue-700 border border-blue-200 px-3 py-1.5 rounded-lg hover:bg-blue-100 transition-colors disabled:opacity-50">
-                            {emailSending === r.id ? "…" : "✉ Indeling"}
                           </button>
                           <button
                             onClick={() => setDeleteConfirm(r)}
@@ -491,7 +410,7 @@ export default function VrijwilligersClient({ initialRows, suppliesOptions }: { 
                     </tr>
                   ))}
                   {filtered.length === 0 && (
-                    <tr><td colSpan={9} className="px-4 py-8 text-center text-gray-400">Geen aanmeldingen gevonden</td></tr>
+                    <tr><td colSpan={8} className="px-4 py-8 text-center text-gray-400">Geen aanmeldingen gevonden</td></tr>
                   )}
                 </tbody>
               </table>
@@ -506,28 +425,17 @@ export default function VrijwilligersClient({ initialRows, suppliesOptions }: { 
           {[...FINAL_TASK_OPTIONS.slice(1), { value: "", label: "Nog niet ingepland" }].map(opt => {
             const group = taskGroups[opt.value] ?? [];
             if (group.length === 0) return null;
-            const unsent = group.filter(v => !v.assignment_email_sent);
             return (
               <div key={opt.value} className="bg-white rounded-2xl shadow-sm border border-stone-100 overflow-hidden">
-                <div className="px-5 py-3 bg-gray-50 border-b border-stone-100 flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <h3 className="font-semibold text-gray-900 text-sm">{opt.label}</h3>
-                    <span className="text-xs text-gray-400">{group.length} personen</span>
-                  </div>
-                  {unsent.length > 0 && (
-                    <button
-                      onClick={() => handleBulkSend(opt.value, group)}
-                      disabled={bulkSending === opt.value}
-                      className="text-xs bg-blue-50 text-blue-700 border border-blue-200 px-3 py-1.5 rounded-lg hover:bg-blue-100 transition-colors disabled:opacity-50 whitespace-nowrap">
-                      {bulkSending === opt.value ? "Verzenden…" : `✉ Stuur ${unsent.length} niet-verzonden`}
-                    </button>
-                  )}
+                <div className="px-5 py-3 bg-gray-50 border-b border-stone-100 flex items-center gap-3">
+                  <h3 className="font-semibold text-gray-900 text-sm">{opt.label}</h3>
+                  <span className="text-xs text-gray-400">{group.length} personen</span>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
                       <tr>
-                        {["Naam","Telefoon","E-mail","Tijd/dagdeel","Status","Mail","Notitie"].map(h => (
+                        {["Naam","Telefoon","E-mail","Tijd/dagdeel","Status","Notitie"].map(h => (
                           <th key={h} className="text-left px-4 py-2 text-xs font-semibold text-gray-400">{h}</th>
                         ))}
                       </tr>
@@ -545,18 +453,6 @@ export default function VrijwilligersClient({ initialRows, suppliesOptions }: { 
                             <span className={`inline-block text-xs font-semibold px-2 py-0.5 rounded-full ${STATUS_BADGE[r.planning_status ?? "new"] ?? ""}`}>
                               {STATUS_LABEL[r.planning_status ?? "new"]}
                             </span>
-                          </td>
-                          <td className="px-4 py-2 whitespace-nowrap">
-                            {r.assignment_email_sent ? (
-                              <span className="text-xs text-green-600" title={r.assignment_email_sent_at ? new Date(r.assignment_email_sent_at).toLocaleString("nl-NL") : "verzonden"}>✓</span>
-                            ) : (
-                              <button
-                                onClick={() => handleSendEmail(r)}
-                                disabled={emailSending === r.id}
-                                className="text-xs bg-blue-50 text-blue-700 border border-blue-200 px-2 py-1 rounded-lg hover:bg-blue-100 transition-colors disabled:opacity-50">
-                                {emailSending === r.id ? "…" : "✉"}
-                              </button>
-                            )}
                           </td>
                           <td className="px-4 py-2 text-xs text-amber-600 max-w-xs truncate">{r.internal_note ?? "—"}</td>
                         </tr>
@@ -812,16 +708,6 @@ export default function VrijwilligersClient({ initialRows, suppliesOptions }: { 
                 </select>
               </div>
 
-              {/* Communicatie (readonly) */}
-              <div className="bg-stone-50 rounded-2xl p-4 space-y-1">
-                <p className="text-xs font-semibold text-green-600 uppercase tracking-wider mb-2">Communicatie</p>
-                <p className="text-xs text-gray-500">
-                  Indelingsmail: {editVolunteer.assignment_email_sent
-                    ? `✓ verzonden op ${editVolunteer.assignment_email_sent_at ? new Date(editVolunteer.assignment_email_sent_at).toLocaleString("nl-NL") : "—"}`
-                    : "Nog niet verstuurd"}
-                </p>
-              </div>
-
               {saveError && <p className="text-red-500 text-sm bg-red-50 border border-red-200 rounded-xl px-4 py-2">{saveError}</p>}
 
               {/* Acties */}
@@ -829,12 +715,6 @@ export default function VrijwilligersClient({ initialRows, suppliesOptions }: { 
                 <button onClick={handleSave} disabled={saving}
                   className="flex-1 bg-green-800 text-white font-semibold rounded-full py-3 hover:bg-green-900 transition-colors disabled:opacity-50">
                   {saving ? "Opslaan…" : "Opslaan"}
-                </button>
-                <button
-                  onClick={() => { setModalOpen(false); handleSendEmail(editVolunteer); }}
-                  disabled={emailSending === editVolunteer.id}
-                  className="flex-1 bg-blue-600 text-white font-semibold rounded-full py-3 hover:bg-blue-700 transition-colors disabled:opacity-50">
-                  {emailSending === editVolunteer.id ? "Verzenden…" : "✉ Indelingsmail sturen"}
                 </button>
                 <button onClick={() => setModalOpen(false)} className="px-5 py-3 border border-stone-200 rounded-full text-gray-600 hover:bg-stone-50 transition-colors text-sm">
                   Annuleren

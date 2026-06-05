@@ -60,7 +60,8 @@ export async function POST(
     });
 
     if (!result.ok) {
-      return NextResponse.json({ error: "Verzenden mislukt." }, { status: 500 });
+      console.error("[indelingsmail] Mislukt voor", row.email, ":", result.error);
+      return NextResponse.json({ error: result.error ?? "Verzenden mislukt." }, { status: 500 });
     }
 
     const sentAt = new Date().toISOString();
@@ -85,7 +86,7 @@ export async function POST(
 
     return NextResponse.json({ ok: true, sent_at: sentAt });
   } catch (err) {
-    console.error("[api/vrijwilligers/[id]/indelingsmail]", err);
+    console.error("[indelingsmail] Onverwachte fout:", err instanceof Error ? err.message : err);
     return NextResponse.json({ error: "Interne fout." }, { status: 500 });
   }
 }

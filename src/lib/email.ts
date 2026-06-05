@@ -2,14 +2,20 @@
 //
 // Benodigde ENV (zie .env.local.example):
 //   RESEND_API_KEY   – verplicht (haal op via resend.com)
+//   NOTIFY_EMAIL     – verplicht: ontvanger van organisatienotificaties
 //   EMAIL_FROM       – optioneel, standaard: onboarding@resend.dev
 //
 // Documentatie: https://resend.com/docs
 
 import { Resend } from "resend";
 
-const NOTIFY_TO  = "m.denbesten@live.nl";
-const FROM       = process.env.EMAIL_FROM ?? "Autowasdag <onboarding@resend.dev>";
+function getNotifyTo(): string {
+  const addr = process.env.NOTIFY_EMAIL;
+  if (!addr) console.warn("[email] NOTIFY_EMAIL niet ingesteld — organisatienotificaties worden NIET bezorgd.");
+  return addr ?? "";
+}
+
+const FROM = process.env.EMAIL_FROM ?? "Autowasdag <onboarding@resend.dev>";
 
 function getResend(): Resend | null {
   const key = process.env.RESEND_API_KEY;
@@ -82,9 +88,12 @@ async function send(subject: string, html: string): Promise<SendResult> {
   const resend = getResend();
   if (!resend) return { ok: true }; // stilte in dev als key ontbreekt
 
+  const notifyTo = getNotifyTo();
+  if (!notifyTo) return { ok: true };
+
   const { error } = await resend.emails.send({
     from: FROM,
-    to:   NOTIFY_TO,
+    to:   notifyTo,
     subject,
     html,
   });
@@ -283,6 +292,53 @@ export async function sendVolunteerConfirmation(data: {
 
 // ── Indelingsmail naar vrijwilliger ──────────────────────────────────────────
 
+function buildAssignmentHtml(opts: {
+  name: string;
+  task_label: string;
+  shift_label: string;
+}): string {
+  const esc = (s: string) =>
+    s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+  return `<!DOCTYPE html>
+<html lang="nl">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f8f6f1;font-family:system-ui,-apple-system,sans-serif">
+  <div style="max-width:560px;margin:32px auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 2px 16px rgba(0,0,0,.08)">
+    <div style="background:#155237;padding:24px 28px">
+      <h1 style="margin:0;font-size:22px;font-weight:800;color:#fff">Autowasdag Sionkerk</h1>
+    </div>
+    <div style="padding:28px;font-size:15px;color:#222;line-height:1.7">
+      <p style="margin:0 0 16px">Beste ${esc(opts.name)},</p>
+      <p style="margin:0 0 20px">Bedankt voor je aanmelding voor de autowasdag.</p>
+      <p style="margin:0 0 10px;font-weight:600;color:#155237">Je bent ingedeeld voor:</p>
+      <table style="margin:0 0 24px;border-collapse:collapse">
+        <tr>
+          <td style="padding:4px 16px 4px 0;font-weight:600;color:#444;white-space:nowrap;vertical-align:top">Taak</td>
+          <td style="padding:4px 0;color:#222">${esc(opts.task_label)}</td>
+        </tr>
+        <tr>
+          <td style="padding:4px 16px 4px 0;font-weight:600;color:#444;white-space:nowrap;vertical-align:top">Tijd/dagdeel</td>
+          <td style="padding:4px 0;color:#222">${esc(opts.shift_label)}</td>
+        </tr>
+      </table>
+      <p style="margin:0 0 10px;font-weight:600;color:#155237">Praktische informatie:</p>
+      <ul style="margin:0 0 28px;padding-left:20px;color:#333">
+        <li style="margin-bottom:6px">Meld je bij aankomst bij de organisatie.</li>
+        <li style="margin-bottom:6px">Neem mee wat je hebt opgegeven, als dat van toepassing is.</li>
+        <li style="margin-bottom:6px">Kun je toch niet? Laat het dan zo snel mogelijk weten.</li>
+      </ul>
+      <p style="margin:0 0 4px;color:#333">Hartelijke groet,</p>
+      <p style="margin:0;font-weight:600;color:#155237">Organisatie autowasdag Sionkerk</p>
+    </div>
+    <div style="padding:16px 28px;background:#f8f6f1;border-top:1px solid #eee">
+      <p style="margin:0;font-size:12px;color:#999">Autowasdag Sionkerk Houten</p>
+    </div>
+  </div>
+</body>
+</html>`;
+}
+
 export async function sendAssignmentEmail(data: {
   name: string;
   email: string;
@@ -301,50 +357,13 @@ export async function sendAssignmentEmail(data: {
     shiftLabel = `Van ${data.final_start_time.slice(0, 5)} tot ${data.final_end_time.slice(0, 5)}`;
   }
 
-  // Parse contributiedetails voor bakken/spullen/sponsoring
-  const bakkenDetail    = data.contribution_details?.split("\n").find(l => l.startsWith("Bakken:"))?.replace("Bakken:", "").trim() ?? null;
-  const spullenDetail   = data.contribution_details?.split("\n").find(l => l.startsWith("Spullen:"))?.replace("Spullen:", "").trim() ?? null;
-  const sponsorDetail   = data.contribution_details?.split("\n").find(l => l.startsWith("Sponsoring:"))?.replace("Sponsoring:", "").trim() ?? null;
-
-  const rows: [string, string | null | undefined][] = [
-    ["Datum",    data.event_date_formatted ?? null],
-    ["Taak",     taskLabel],
-    ["Tijd",     shiftLabel],
-    ["Locatie",  "Eikenhout 221, Houten"],
-  ];
-
-  if (bakkenDetail) {
-    rows.push(["", "We hebben genoteerd dat je het volgende meeneemt:"]);
-    rows.push(["Wat wordt gebakken", bakkenDetail]);
-    if (data.cost_preference) {
-      rows.push(["Kosten ingrediënten", COST_LABELS[data.cost_preference] ?? data.cost_preference]);
-    }
-  }
-  const spullenAnders      = data.contribution_details?.split("\n").find(l => l.startsWith("SpullenAnders:"))?.replace("SpullenAnders:", "").trim() ?? null;
-  const spullenToelichting = data.contribution_details?.split("\n").find(l => l.startsWith("SpullenToelichting:"))?.replace("SpullenToelichting:", "").trim() ?? null;
-
-  if (spullenDetail || spullenAnders || spullenToelichting) {
-    rows.push(["", "We hebben genoteerd dat je de volgende spullen meeneemt:"]);
-    if (spullenDetail)      rows.push(["Spullen",     spullenDetail]);
-    if (spullenAnders)      rows.push(["Anders",      spullenAnders]);
-    if (spullenToelichting) rows.push(["Toelichting", spullenToelichting]);
-  }
-  if (sponsorDetail) {
-    rows.push(["", "We hebben dit voorstel of aanbod genoteerd:"]);
-    rows.push(["Sponsoring / verkoop", sponsorDetail]);
-  }
-
-  rows.push(["", "Als dit niet lukt of als er iets niet klopt, reageer dan even op deze mail."]);
-
-  const html = buildHtml({
-    typeLabel:   `Je indeling voor de Autowasdag`,
-    accentColor: "#155237",
-    rows,
-    timestamp:   now(),
-  });
+  const html = buildAssignmentHtml({ name: data.name, task_label: taskLabel, shift_label: shiftLabel });
 
   const resend = getResend();
-  if (!resend) return { ok: true };
+  if (!resend) {
+    console.error("[email] RESEND_API_KEY niet ingesteld — indelingsmail voor", data.email, "niet verzonden.");
+    return { ok: false, error: "RESEND_API_KEY is niet ingesteld." };
+  }
 
   const { error } = await resend.emails.send({
     from:    FROM,
@@ -354,7 +373,7 @@ export async function sendAssignmentEmail(data: {
   });
 
   if (error) {
-    console.error("[email] Indelingsmail mislukt:", error);
+    console.error("[email] Indelingsmail mislukt voor", data.email, ":", error.message);
     return { ok: false, error: error.message };
   }
   return { ok: true };
