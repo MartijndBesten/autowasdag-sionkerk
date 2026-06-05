@@ -50,23 +50,30 @@ export async function POST(req: NextRequest) {
       throw dbErr;
     }
 
-    sendDonationNotification({
-      name, email, phone: phone || null, amount: amountStr, notes: notes || null,
-    }).catch(e => console.error("[bijdragen] admin mail fout:", e));
+    const successResponse = NextResponse.json({ ok: true }, { status: 200 });
 
-    sendDonationConfirmation({ name, email, amount: amountStr })
-      .catch(e => console.error("[bijdragen] bevestigingsmail fout:", e));
+    void (async () => {
+      try {
+        await sendDonationNotification({ name, email, phone: phone || null, amount: amountStr, notes: notes || null });
+      } catch (e) { console.error("[bijdragen] admin mail fout:", e); }
 
-    supabase.from("email_logs").insert({
-      to_address:     process.env.NOTIFY_EMAIL ?? "",
-      subject:        `Nieuwe bijdrage — ${name} (${amountStr})`,
-      template:       "donation",
-      reference_id:   record?.id,
-      reference_type: "contribution_signup",
-      status:         "sent",
-    }).catch(() => {});
+      try {
+        await sendDonationConfirmation({ name, email, amount: amountStr });
+      } catch (e) { console.error("[bijdragen] bevestigingsmail fout:", e); }
 
-    return NextResponse.json({ ok: true });
+      try {
+        await supabase.from("email_logs").insert({
+          to_address:     process.env.NOTIFY_EMAIL ?? "",
+          subject:        `Nieuwe bijdrage — ${name} (${amountStr})`,
+          template:       "donation",
+          reference_id:   record?.id,
+          reference_type: "contribution_signup",
+          status:         "sent",
+        });
+      } catch { /* silenced */ }
+    })();
+
+    return successResponse;
   } catch (err) {
     console.error("[api/bijdragen]", err);
     return NextResponse.json({ error: "Er is iets misgegaan. Probeer het opnieuw." }, { status: 500 });
