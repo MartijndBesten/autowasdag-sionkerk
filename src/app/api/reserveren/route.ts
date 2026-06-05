@@ -96,7 +96,7 @@ export async function POST(req: NextRequest) {
     }).catch(console.error);
 
     await supabase.from("email_logs").insert({
-      to_address:     "m.denbesten@live.nl",
+      to_address:     process.env.NOTIFY_EMAIL ?? "",
       subject:        `Nieuwe reservering — ${full_name}`,
       template:       "reservation_admin",
       reference_id:   reservation?.id,

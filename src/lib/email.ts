@@ -151,15 +151,22 @@ export async function sendReservationConfirmation(data: {
     compleet:      "Compleet (buiten + binnen)",
   };
 
+  function formatDate(dateStr: string): string {
+    if (!dateStr) return dateStr;
+    const [y, m, d] = dateStr.split("-").map(Number);
+    const s = new Date(y, m - 1, d).toLocaleDateString("nl-NL", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  }
+
   const html = buildHtml({
-    typeLabel:   "Uw reservering is ontvangen",
+    typeLabel:   "Uw reservering is bevestigd",
     accentColor: "#155237",
     rows: [
       ["Naam",        data.name],
       ["Pakket",      packageLabels[data.package] ?? data.package],
-      ["Datum",       data.date],
+      ["Datum",       formatDate(data.date)],
       ["Tijdslot",    `${data.time} uur`],
-      ["",            "Wij nemen contact op ter bevestiging. Tot zaterdag!"],
+      ["",            "Uw reservering is bevestigd. Kom 10 minuten voor het gekozen tijdslot naar de autowasdag. We zien u graag op zaterdag 11 juli."],
     ],
     timestamp: now(),
   });
@@ -170,7 +177,7 @@ export async function sendReservationConfirmation(data: {
   const { error } = await resend.emails.send({
     from: FROM,
     to:   data.email,
-    subject: `Bevestiging reservering Autowasdag — ${data.date} ${data.time}`,
+    subject: `Bevestiging reservering Autowasdag — ${formatDate(data.date)} ${data.time}`,
     html,
   });
 

@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
 
     if (emailSent) {
       await supabase.from("email_logs").insert({
-        to_address: "m.denbesten@live.nl", subject: `Nieuwe bijdrage (${type}) — ${name}`,
+        to_address: process.env.NOTIFY_EMAIL ?? "", subject: `Nieuwe bijdrage (${type}) — ${name}`,
         template: `contribution_${type}`, reference_id: record?.id, reference_type: "contribution_signup", status: "sent",
       });
     }

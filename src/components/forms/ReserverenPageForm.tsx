@@ -89,12 +89,14 @@ export default function ReserverenPageForm({ eventDate }: { eventDate: string })
           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
         </svg>
       </div>
-      <h2 className="font-bold text-green-950 text-2xl mb-3">Reservering ontvangen!</h2>
+      <h2 className="font-bold text-green-950 text-2xl mb-3">Reservering bevestigd!</h2>
       <p className="text-gray-500 mb-2">Bedankt, <strong>{form.full_name}</strong>.</p>
       <p className="text-gray-400 text-sm max-w-sm mx-auto">
-        U bent ingeschreven voor <strong>{PACKAGE_OPTIONS.find(p => p.value === form.package_type)?.label}</strong>{" "}
-        op <strong>{formatEventDate(form.reservation_date)}</strong> om <strong>{form.reservation_time}</strong> uur.
-        We nemen contact op ter bevestiging.
+        Uw reservering is bevestigd. U bent ingeschreven voor keuze{" "}
+        <strong>{PACKAGE_OPTIONS.find(p => p.value === form.package_type)?.label}</strong>{" "}
+        op <strong>{formatEventDate(form.reservation_date)}</strong> om <strong>{form.reservation_time}</strong>.
+        Kom 10 minuten voor het gekozen tijdslot naar de autowasdag. We zien u graag op zaterdag 11 juli.
+        U ontvangt hiervan een bevestiging per e-mail.
       </p>
       <button onClick={() => router.push("/")} className="btn-primary mt-8">Terug naar de homepage</button>
     </div>

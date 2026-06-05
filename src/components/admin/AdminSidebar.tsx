@@ -11,6 +11,7 @@ const nav = [
   { href: "/admin/bijdragen",    label: "Bijdragen",    icon: "🎂" },
   { href: "/admin/acties",       label: "Inhoud",        icon: "✏️" },
   { href: "/admin/instellingen", label: "Instellingen", icon: "⚙️" },
+  { href: "/admin/handleiding",  label: "Handleiding",  icon: "📖" },
 ];
 
 export default function AdminSidebar({ email }: { email: string }) {

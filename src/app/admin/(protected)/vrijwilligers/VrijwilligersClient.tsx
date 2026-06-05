@@ -19,6 +19,20 @@ const TASK_LABELS: Record<string, string> = {
   not_needed: "❌ Niet nodig",
 };
 
+const TASK_LABELS_PLAIN: Record<string, string> = {
+  wassen:     "Auto's wassen",
+  koffie:     "Koffie schenken",
+  friet:      "Friet & snacks",
+  kinderhoek: "Kinderhoek",
+  opbouwen:   "Op- en afbouwen",
+  bakken:     "Bakken",
+  spullen:    "Spullen meenemen",
+  sponsoring: "Sponsoring / verkopen",
+  anders:     "Iets anders",
+  reserve:    "Reserve / oproepbaar",
+  not_needed: "Niet nodig",
+};
+
 const FINAL_TASK_OPTIONS = [
   { value: "",          label: "— Nog niet ingepland —" },
   { value: "wassen",    label: "Auto's wassen" },
@@ -77,6 +91,13 @@ const STATUS_LABEL: Record<string, string> = {
   not_needed:      "Niet nodig",
 };
 
+const COST_LABELS: Record<string, string> = {
+  eigen_kosten:       "Eigen kosten",
+  vergoeding_gewenst: "Vergoeding gewenst",
+  gesponsord:         "Gesponsord",
+  weet_ik_nog_niet:   "Weet ik nog niet",
+};
+
 function shiftLabel(s: VolunteerSignup): string {
   if (!s.final_shift || s.final_shift === "not_chosen") return "—";
   if (s.final_shift === "specific" && s.final_start_time && s.final_end_time) {
@@ -85,17 +106,167 @@ function shiftLabel(s: VolunteerSignup): string {
   return SHIFT_OPTIONS.find(o => o.value === s.final_shift)?.label ?? s.final_shift;
 }
 
-const COST_LABELS: Record<string, string> = {
-  eigen_kosten:       "Eigen kosten",
-  vergoeding_gewenst: "Vergoeding gewenst",
-  gesponsord:         "Gesponsord",
-  weet_ik_nog_niet:   "Weet ik nog niet",
-};
-
 function parseContrib(details: string | null, key: string): string | null {
   if (!details) return null;
   const line = details.split("\n").find(l => l.toLowerCase().startsWith(key.toLowerCase() + ":"));
   return line ? line.slice(key.length + 1).trim() : null;
+}
+
+// ─── CSV helpers ──────────────────────────────────────────────────────────────
+
+function csvCell(v: string | null | undefined): string {
+  const s = (v ?? "").replace(/"/g, '""');
+  return `"${s}"`;
+}
+
+function generateCsv(rows: VolunteerSignup[], internal: boolean, suppliesLabels: Record<string, string>): string {
+  const BOM = "﻿";
+  const SEP = ";";
+
+  const headers = internal
+    ? ["Naam","E-mailadres","Telefoon","Beschikbaarheid","Opgegeven voorkeuren","Definitieve taak","Tijd/dagdeel","Status","Wat wordt gebakken","Meegenomen spullen","Kosten/sponsoring","Notitie vrijwilliger","Interne notitie","Indieningsdatum"]
+    : ["Naam","Beschikbaarheid","Opgegeven voorkeuren","Definitieve taak","Tijd/dagdeel","Status","Wat wordt gebakken","Meegenomen spullen","Indieningsdatum"];
+
+  const dataRows = rows.map(r => {
+    const selectedTasksStr = (r.selected_tasks ?? []).map(t => TASK_LABELS_PLAIN[t] ?? t).join(", ");
+    const finalTasksStr    = (r.final_tasks   ?? []).map(t => TASK_LABELS_PLAIN[t] ?? t).join(", ");
+    const suppliesStr      = (r.selected_supplies ?? []).map(s => suppliesLabels[s] ?? s).join(", ");
+    const bakkenStr        = parseContrib(r.contribution_details, "Bakken") ?? "";
+    const costStr          = COST_LABELS[r.cost_preference ?? ""] ?? (r.cost_preference ?? "");
+    const dateStr          = new Date(r.created_at).toLocaleDateString("nl-NL");
+
+    if (internal) {
+      return [
+        r.full_name,
+        r.email,
+        r.phone ?? "",
+        AVAIL_LABELS[r.availability] ?? r.availability,
+        selectedTasksStr,
+        finalTasksStr,
+        shiftLabel(r),
+        STATUS_LABEL[r.planning_status ?? "new"] ?? (r.planning_status ?? ""),
+        bakkenStr,
+        suppliesStr,
+        costStr,
+        r.notes ?? "",
+        r.internal_note ?? "",
+        dateStr,
+      ].map(csvCell).join(SEP);
+    } else {
+      return [
+        r.full_name,
+        AVAIL_LABELS[r.availability] ?? r.availability,
+        selectedTasksStr,
+        finalTasksStr,
+        shiftLabel(r),
+        STATUS_LABEL[r.planning_status ?? "new"] ?? (r.planning_status ?? ""),
+        bakkenStr,
+        suppliesStr,
+        dateStr,
+      ].map(csvCell).join(SEP);
+    }
+  });
+
+  return BOM + [headers.map(csvCell).join(SEP), ...dataRows].join("\r\n");
+}
+
+function downloadCsv(rows: VolunteerSignup[], internal: boolean, suppliesLabels: Record<string, string>) {
+  const csv      = generateCsv(rows, internal, suppliesLabels);
+  const blob     = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url      = URL.createObjectURL(blob);
+  const filename = internal ? "autowasdag-interne-planning.csv" : "autowasdag-vrijwilligersoverzicht.csv";
+  const a        = document.createElement("a");
+  a.href         = url;
+  a.download     = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ─── Print helpers ────────────────────────────────────────────────────────────
+
+function openPrintWindow(rows: VolunteerSignup[], suppliesLabels: Record<string, string>) {
+  const shiftGroups: { label: string; shift: string | null }[] = [
+    { label: "Hele dag (09:00 – 16:00)", shift: "full_day" },
+    { label: "Ochtend (09:00 – 12:30)",  shift: "morning"  },
+    { label: "Middag (12:30 – 16:00)",   shift: "afternoon"},
+    { label: "Specifieke tijd / anders", shift: "specific"  },
+    { label: "Nog niet ingepland",       shift: null        },
+  ];
+
+  const planned = rows.filter(r => !["cancelled","not_needed"].includes(r.planning_status ?? ""));
+
+  let html = `<!DOCTYPE html><html lang="nl"><head><meta charset="utf-8">
+<title>Dagplanning Autowasdag</title>
+<style>
+  body { font-family: Arial, sans-serif; font-size: 11pt; margin: 20mm; color: #111; }
+  h1   { font-size: 16pt; margin-bottom: 4px; }
+  h2   { font-size: 13pt; margin-top: 20px; margin-bottom: 6px; border-bottom: 1px solid #aaa; padding-bottom: 3px; color: #1a4731; }
+  h3   { font-size: 11pt; margin-top: 14px; margin-bottom: 4px; color: #555; }
+  table{ width: 100%; border-collapse: collapse; margin-bottom: 8px; font-size: 10pt; }
+  th   { background: #f0f0f0; text-align: left; padding: 4px 8px; font-size: 9pt; font-weight: 600; border-bottom: 1px solid #ccc; }
+  td   { padding: 4px 8px; border-bottom: 1px solid #eee; vertical-align: top; }
+  .badge { display:inline-block; padding: 1px 6px; border-radius: 4px; font-size: 9pt; }
+  .planned { background:#dbeafe; color:#1e40af; }
+  .sent    { background:#dcfce7; color:#166534; }
+  .reserve { background:#fed7aa; color:#9a3412; }
+  .new     { background:#f3f4f6; color:#374151; }
+  @page { size: A4; margin: 15mm; }
+  @media print { body { margin: 0; } }
+</style></head><body>`;
+
+  html += `<h1>Dagplanning Autowasdag Sionkerk Houten</h1>
+<p style="color:#666;font-size:10pt;margin-bottom:16px;">Gegenereerd op ${new Date().toLocaleDateString("nl-NL", { day:"numeric", month:"long", year:"numeric" })} &mdash; ${planned.length} vrijwilligers</p>`;
+
+  for (const sg of shiftGroups) {
+    const shiftRows = planned.filter(r => {
+      if (sg.shift === null) return !r.final_shift || r.final_shift === "not_chosen";
+      if (sg.shift === "specific") return r.final_shift === "specific";
+      return r.final_shift === sg.shift;
+    });
+    if (shiftRows.length === 0) continue;
+
+    html += `<h2>${sg.label} &mdash; ${shiftRows.length} persoon/personen</h2>`;
+
+    const taskMap: Record<string, VolunteerSignup[]> = {};
+    for (const r of shiftRows) {
+      const tasks = r.final_tasks?.length ? r.final_tasks : ["__onbekend__"];
+      for (const t of tasks) {
+        if (!taskMap[t]) taskMap[t] = [];
+        taskMap[t].push(r);
+      }
+    }
+
+    for (const [taskKey, taskRows] of Object.entries(taskMap)) {
+      const taskLabel = taskKey === "__onbekend__" ? "Nog niet toegewezen" : (TASK_LABELS_PLAIN[taskKey] ?? taskKey);
+      html += `<h3>${taskLabel} (${taskRows.length})</h3>
+<table><thead><tr><th>Naam</th><th>Telefoon</th><th>Status</th><th>Spullen</th><th>Extra info</th></tr></thead><tbody>`;
+      for (const r of taskRows) {
+        const supplies = (r.selected_supplies ?? []).map(s => suppliesLabels[s] ?? s).join(", ");
+        const bakken   = parseContrib(r.contribution_details, "Bakken");
+        const extra    = [bakken ? `Bakt: ${bakken}` : "", r.notes ?? ""].filter(Boolean).join(" | ");
+        const badgeMap: Record<string, string> = { planned:"planned", assignment_sent:"sent", reserve:"reserve" };
+        const badgeCls = badgeMap[r.planning_status ?? ""] ?? "new";
+        const statusLbl = STATUS_LABEL[r.planning_status ?? "new"] ?? r.planning_status ?? "";
+        html += `<tr>
+  <td><strong>${r.full_name}</strong></td>
+  <td>${r.phone ?? "—"}</td>
+  <td><span class="badge ${badgeCls}">${statusLbl}</span></td>
+  <td>${supplies || "—"}</td>
+  <td style="color:#666;font-size:9pt;">${extra || "—"}</td>
+</tr>`;
+      }
+      html += `</tbody></table>`;
+    }
+  }
+
+  html += `</body></html>`;
+
+  const win = window.open("", "_blank", "width=900,height=700");
+  if (!win) return;
+  win.document.write(html);
+  win.document.close();
+  win.focus();
+  win.print();
 }
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -109,17 +280,31 @@ type EditState = {
   planning_status: PlanningStatus;
 };
 
-type Tab = "lijst" | "planning" | "bakken" | "spullen";
+type Tab = "lijst" | "planning" | "bakken" | "spullen" | "export" | "afdrukken";
+
+const STANDAARD_MAILTEKST = `Beste vrijwilliger,
+
+De indeling voor de autowasdag van de Sionkerk Houten is rond!
+
+Je vindt je taak en tijd terug in de bijlage of in het overzicht dat we meesturen. Lees dit even goed door zodat je weet waar je moet zijn en wanneer.
+
+Heb je vragen of kan je onverhoopt toch niet komen? Reageer dan zo snel mogelijk op dit bericht, dan kunnen we tijdig iets regelen.
+
+Tot dan en alvast bedankt voor je inzet!
+
+Hartelijke groet,
+De organisatie van de autowasdag
+Sionkerk Houten`;
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function VrijwilligersClient({ initialRows, suppliesOptions }: { initialRows: VolunteerSignup[]; suppliesOptions: { value: string; label: string }[] }) {
   const SUPPLIES_LABELS = Object.fromEntries(suppliesOptions.map(o => [o.value, o.label]));
-  const [rows,         setRows]         = useState<VolunteerSignup[]>(initialRows);
-  const [activeTab,    setActiveTab]    = useState<Tab>("lijst");
-  const [modalOpen,    setModalOpen]    = useState(false);
-  const [editVolunteer,setEditVolunteer]= useState<VolunteerSignup | null>(null);
-  const [editState,    setEditState]    = useState<EditState>({
+  const [rows,          setRows]          = useState<VolunteerSignup[]>(initialRows);
+  const [activeTab,     setActiveTab]     = useState<Tab>("lijst");
+  const [modalOpen,     setModalOpen]     = useState(false);
+  const [editVolunteer, setEditVolunteer] = useState<VolunteerSignup | null>(null);
+  const [editState,     setEditState]     = useState<EditState>({
     final_tasks: [], final_shift: "not_chosen",
     final_start_time: "", final_end_time: "",
     internal_note: "", planning_status: "new",
@@ -130,6 +315,7 @@ export default function VrijwilligersClient({ initialRows, suppliesOptions }: { 
   const [deleting,      setDeleting]      = useState(false);
   const [deleteError,   setDeleteError]   = useState<string | null>(null);
   const [deleteSuccess, setDeleteSuccess] = useState<string | null>(null);
+  const [copiedKey,     setCopiedKey]     = useState<string | null>(null);
 
   // Filters
   const [fStatus,        setFStatus]        = useState("");
@@ -197,6 +383,19 @@ export default function VrijwilligersClient({ initialRows, suppliesOptions }: { 
     setDeleting(false);
   }
 
+  async function copyEmails(emailList: string[], key: string) {
+    if (emailList.length === 0) return;
+    await navigator.clipboard.writeText(emailList.join("; "));
+    setCopiedKey(key);
+    setTimeout(() => setCopiedKey(null), 2500);
+  }
+
+  async function copyText(text: string, key: string) {
+    await navigator.clipboard.writeText(text);
+    setCopiedKey(key);
+    setTimeout(() => setCopiedKey(null), 2500);
+  }
+
   // ─── Filtered rows ──────────────────────────────────────────────────────────
 
   const filtered = useMemo(() => rows.filter(r => {
@@ -239,17 +438,60 @@ export default function VrijwilligersClient({ initialRows, suppliesOptions }: { 
     return groups;
   }, [rows]);
 
+  // ─── Export helpers ──────────────────────────────────────────────────────────
+
+  const plannedRows = useMemo(() =>
+    rows.filter(r => ["planned","assignment_sent"].includes(r.planning_status ?? "")),
+  [rows]);
+
+  const emailGroups = useMemo(() => {
+    const all       = plannedRows.map(r => r.email);
+    const morning   = plannedRows.filter(r => r.final_shift === "morning").map(r => r.email);
+    const afternoon = plannedRows.filter(r => r.final_shift === "afternoon").map(r => r.email);
+    const fullDay   = plannedRows.filter(r => r.final_shift === "full_day").map(r => r.email);
+    const byTask: { key: string; label: string; emails: string[] }[] = FINAL_TASK_OPTIONS.slice(1)
+      .map(o => ({
+        key:    o.value,
+        label:  o.label,
+        emails: plannedRows.filter(r => r.final_tasks?.includes(o.value)).map(r => r.email),
+      }))
+      .filter(g => g.emails.length > 0);
+    return { all, morning, afternoon, fullDay, byTask };
+  }, [plannedRows]);
+
   const fc  = "w-full border border-stone-200 rounded-xl px-3 py-2 text-sm text-green-950 focus:outline-none focus:border-green-600 transition-colors";
   const lbl = "block text-xs font-semibold text-green-700 uppercase tracking-wider mb-1";
 
   // ─── Tabs ───────────────────────────────────────────────────────────────────
 
   const tabs: { key: Tab; label: string; count?: number }[] = [
-    { key: "lijst",    label: "Aanmeldingen", count: rows.length },
-    { key: "planning", label: "Planning per taak" },
-    { key: "bakken",   label: "Baklijst",    count: bakkers.length },
-    { key: "spullen",  label: "Spullen & sponsoring", count: spullenRows.length },
+    { key: "lijst",     label: "Aanmeldingen",         count: rows.length },
+    { key: "planning",  label: "Planning per taak" },
+    { key: "bakken",    label: "Baklijst",             count: bakkers.length },
+    { key: "spullen",   label: "Spullen & sponsoring", count: spullenRows.length },
+    { key: "export",    label: "Exporteren & mailen" },
+    { key: "afdrukken", label: "Afdrukken" },
   ];
+
+  // ─── Copy button ─────────────────────────────────────────────────────────────
+
+  function CopyBtn({ emails, label, btnKey }: { emails: string[]; label: string; btnKey: string }) {
+    const copied = copiedKey === btnKey;
+    return (
+      <button
+        onClick={() => copyEmails(emails, btnKey)}
+        disabled={emails.length === 0}
+        className={`flex items-center gap-2 text-sm px-4 py-2 rounded-xl border transition-colors font-medium disabled:opacity-40 disabled:cursor-not-allowed ${
+          copied
+            ? "bg-green-50 border-green-300 text-green-700"
+            : "bg-white border-stone-200 text-gray-700 hover:bg-stone-50 hover:border-stone-300"
+        }`}
+      >
+        <span>{copied ? "✓ Gekopieerd!" : "📋 " + label}</span>
+        {emails.length > 0 && <span className="text-xs text-gray-400 font-normal">({emails.length})</span>}
+      </button>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -276,8 +518,60 @@ export default function VrijwilligersClient({ initialRows, suppliesOptions }: { 
         </div>
       )}
 
+      {/* ── Actiewerkbalk ──────────────────────────────────────────────────────── */}
+      <div className="bg-white border border-stone-200 rounded-2xl p-4 space-y-3">
+
+        {/* Downloads + print */}
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider w-full sm:w-auto sm:mr-1">Downloaden</span>
+          <button
+            onClick={() => downloadCsv(rows, true, SUPPLIES_LABELS)}
+            className="flex items-center gap-1.5 text-xs font-semibold bg-green-800 text-white px-3 py-2 rounded-xl hover:bg-green-900 transition-colors"
+          >
+            ⬇ Interne planning <span className="font-normal opacity-75">({rows.length})</span>
+          </button>
+          <button
+            onClick={() => downloadCsv(rows, false, SUPPLIES_LABELS)}
+            className="flex items-center gap-1.5 text-xs font-semibold bg-stone-600 text-white px-3 py-2 rounded-xl hover:bg-stone-700 transition-colors"
+          >
+            ⬇ Vrijwilligersoverzicht <span className="font-normal opacity-75">({rows.length})</span>
+          </button>
+          <button
+            onClick={() => downloadCsv(filtered, true, SUPPLIES_LABELS)}
+            className="flex items-center gap-1.5 text-xs font-medium border border-stone-200 text-gray-600 px-3 py-2 rounded-xl hover:bg-stone-50 transition-colors"
+            title="Exporteer alleen de gefilterde rijen"
+          >
+            ⬇ Gefilterde selectie <span className="font-normal text-gray-400">({filtered.length})</span>
+          </button>
+          <button
+            onClick={() => openPrintWindow(rows, SUPPLIES_LABELS)}
+            className="flex items-center gap-1.5 text-xs font-medium border border-stone-200 text-gray-600 px-3 py-2 rounded-xl hover:bg-stone-50 transition-colors"
+          >
+            🖨 Dagplanning afdrukken
+          </button>
+        </div>
+
+        {/* E-mailadressen */}
+        <div className="border-t border-stone-100 pt-3 space-y-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider w-full sm:w-auto sm:mr-1">E-mails kopiëren</span>
+            <CopyBtn emails={emailGroups.all}       label="Alle ingeplande"   btnKey="tb-all" />
+            <CopyBtn emails={emailGroups.morning}   label="Ochtend"           btnKey="tb-morning" />
+            <CopyBtn emails={emailGroups.afternoon} label="Middag"            btnKey="tb-afternoon" />
+            <CopyBtn emails={emailGroups.fullDay}   label="Hele dag"          btnKey="tb-fullday" />
+            {emailGroups.byTask.map(g => (
+              <CopyBtn key={g.key} emails={g.emails} label={g.label} btnKey={`tb-task-${g.key}`} />
+            ))}
+          </div>
+          <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-1.5 flex gap-1.5 items-start">
+            <span className="flex-shrink-0">⚠️</span>
+            <span><strong>Gebruik altijd BCC</strong> — zodat vrijwilligers elkaars e-mailadres niet zien.</span>
+          </p>
+        </div>
+      </div>
+
       {/* Tabs */}
-      <div className="flex gap-1 border-b border-stone-200">
+      <div className="flex gap-1 border-b border-stone-200 flex-wrap">
         {tabs.map(t => (
           <button key={t.key} onClick={() => setActiveTab(t.key)}
             className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors ${activeTab === t.key ? "bg-white border border-b-white border-stone-200 text-green-800 -mb-px" : "text-gray-500 hover:text-gray-700"}`}>
@@ -528,11 +822,11 @@ export default function VrijwilligersClient({ initialRows, suppliesOptions }: { 
               </thead>
               <tbody className="divide-y divide-stone-50">
                 {spullenRows.map(r => {
-                  const spul           = parseContrib(r.contribution_details, "Spullen");
-                  const spulAnders     = parseContrib(r.contribution_details, "SpullenAnders");
-                  const spulToelichting= parseContrib(r.contribution_details, "SpullenToelichting");
-                  const spons          = parseContrib(r.contribution_details, "Sponsoring");
-                  const hasSupplies    = spul || spulAnders || spulToelichting || (r.selected_supplies?.length > 0);
+                  const spul            = parseContrib(r.contribution_details, "Spullen");
+                  const spulAnders      = parseContrib(r.contribution_details, "SpullenAnders");
+                  const spulToelichting = parseContrib(r.contribution_details, "SpullenToelichting");
+                  const spons           = parseContrib(r.contribution_details, "Sponsoring");
+                  const hasSupplies     = spul || spulAnders || spulToelichting || (r.selected_supplies?.length > 0);
                   const types = r.selected_tasks?.filter(t => ["spullen","sponsoring"].includes(t)).map(t => TASK_LABELS[t]?.replace(/^[^ ]+ /, "") ?? t).join(", ") || "—";
                   return (
                     <tr key={r.id} className="hover:bg-gray-50">
@@ -555,7 +849,7 @@ export default function VrijwilligersClient({ initialRows, suppliesOptions }: { 
                               </div>
                             )}
                             {spul && !r.selected_supplies?.length && <p>📦 {spul}</p>}
-                            {spulAnders     && <p>➕ {spulAnders}</p>}
+                            {spulAnders      && <p>➕ {spulAnders}</p>}
                             {spulToelichting && <p className="text-gray-400 italic">{spulToelichting}</p>}
                           </div>
                         )}
@@ -579,6 +873,195 @@ export default function VrijwilligersClient({ initialRows, suppliesOptions }: { 
                 )}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* ── Tab: Exporteren & mailen ────────────────────────────────────────── */}
+      {activeTab === "export" && (
+        <div className="space-y-8">
+
+          {/* Downloads */}
+          <div className="bg-white border border-stone-100 rounded-2xl shadow-sm p-6 space-y-4">
+            <div>
+              <h2 className="font-bold text-gray-900 text-base mb-0.5">Downloads</h2>
+              <p className="text-sm text-gray-500">Exporteer de vrijwilligerslijst als CSV-bestand dat direct in Excel te openen is.</p>
+            </div>
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div className="border border-stone-200 rounded-2xl p-4 space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">🔒</span>
+                  <p className="font-semibold text-gray-800 text-sm">Download interne planning</p>
+                </div>
+                <p className="text-xs text-gray-500">Inclusief e-mailadressen, telefoonnummers en interne notities. <strong>Alleen voor organisatiegebruik.</strong></p>
+                <button
+                  onClick={() => downloadCsv(rows, true, SUPPLIES_LABELS)}
+                  className="w-full mt-2 bg-green-800 text-white text-sm font-semibold rounded-xl py-2.5 hover:bg-green-900 transition-colors"
+                >
+                  ⬇ Download interne planning ({rows.length})
+                </button>
+              </div>
+              <div className="border border-stone-200 rounded-2xl p-4 space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">📄</span>
+                  <p className="font-semibold text-gray-800 text-sm">Download vrijwilligersoverzicht</p>
+                </div>
+                <p className="text-xs text-gray-500">Zonder e-mailadressen en interne notities. Geschikt om te printen of te delen met helpers.</p>
+                <button
+                  onClick={() => downloadCsv(rows, false, SUPPLIES_LABELS)}
+                  className="w-full mt-2 bg-stone-700 text-white text-sm font-semibold rounded-xl py-2.5 hover:bg-stone-800 transition-colors"
+                >
+                  ⬇ Download vrijwilligersoverzicht ({rows.length})
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* BCC-waarschuwing */}
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl px-5 py-4 flex gap-3">
+            <span className="text-amber-500 text-xl flex-shrink-0 mt-0.5">⚠️</span>
+            <div>
+              <p className="font-semibold text-amber-800 text-sm mb-0.5">Gebruik altijd BCC bij het mailen aan meerdere vrijwilligers</p>
+              <p className="text-amber-700 text-sm">Plak e-mailadressen in het BCC-veld van je eigen mailprogramma (niet aan of CC), zodat vrijwilligers elkaars e-mailadres niet kunnen zien. Dit is verplicht vanuit privacyoverwegingen.</p>
+            </div>
+          </div>
+
+          {/* E-mailadressen kopiëren */}
+          <div className="bg-white border border-stone-100 rounded-2xl shadow-sm p-6 space-y-4">
+            <div>
+              <h2 className="font-bold text-gray-900 text-base mb-0.5">E-mailadressen kopiëren</h2>
+              <p className="text-sm text-gray-500">
+                Klik op een groep om de e-mailadressen naar het klembord te kopiëren. Alleen vrijwilligers met status <strong>Ingepland</strong> of <strong>Bevestiging verstuurd</strong> worden meegenomen ({plannedRows.length} personen).
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              <p className="text-xs font-semibold text-green-700 uppercase tracking-wider">Per dagdeel</p>
+              <div className="flex flex-wrap gap-2">
+                <CopyBtn emails={emailGroups.all}       label="Alle ingeplande vrijwilligers"  btnKey="all" />
+                <CopyBtn emails={emailGroups.morning}   label="Alleen ochtend"                 btnKey="morning" />
+                <CopyBtn emails={emailGroups.afternoon} label="Alleen middag"                  btnKey="afternoon" />
+                <CopyBtn emails={emailGroups.fullDay}   label="Alleen hele dag"                btnKey="fullday" />
+              </div>
+            </div>
+
+            {emailGroups.byTask.length > 0 && (
+              <div className="space-y-3">
+                <p className="text-xs font-semibold text-green-700 uppercase tracking-wider">Per definitieve taak</p>
+                <div className="flex flex-wrap gap-2">
+                  {emailGroups.byTask.map(g => (
+                    <CopyBtn key={g.key} emails={g.emails} label={g.label} btnKey={`task-${g.key}`} />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {plannedRows.length === 0 && (
+              <p className="text-sm text-gray-400 italic">Geen ingeplande vrijwilligers gevonden. Zet vrijwilligers eerst op status &ldquo;Ingepland&rdquo; of &ldquo;Bevestiging verstuurd&rdquo;.</p>
+            )}
+          </div>
+
+          {/* Standaardmailtekst */}
+          <div className="bg-white border border-stone-100 rounded-2xl shadow-sm p-6 space-y-4">
+            <div>
+              <h2 className="font-bold text-gray-900 text-base mb-0.5">Standaardmailtekst kopiëren</h2>
+              <p className="text-sm text-gray-500">Kopieer deze mailtekst als startpunt voor je mail aan vrijwilligers. Pas hem aan naar eigen inzicht.</p>
+            </div>
+            <pre className="bg-stone-50 border border-stone-200 rounded-xl p-4 text-sm text-gray-700 whitespace-pre-wrap font-sans leading-relaxed">
+              {STANDAARD_MAILTEKST}
+            </pre>
+            <button
+              onClick={() => copyText(STANDAARD_MAILTEKST, "mailtekst")}
+              className={`flex items-center gap-2 text-sm px-4 py-2.5 rounded-xl border transition-colors font-medium ${
+                copiedKey === "mailtekst"
+                  ? "bg-green-50 border-green-300 text-green-700"
+                  : "bg-white border-stone-200 text-gray-700 hover:bg-stone-50"
+              }`}
+            >
+              {copiedKey === "mailtekst" ? "✓ Gekopieerd!" : "📋 Kopieer standaardmailtekst"}
+            </button>
+            <p className="text-xs text-gray-400">Tip: stuur de gedownloade CSV als bijlage mee zodat vrijwilligers hun taak en tijd in Excel kunnen terugvinden.</p>
+          </div>
+        </div>
+      )}
+
+      {/* ── Tab: Afdrukken ──────────────────────────────────────────────────── */}
+      {activeTab === "afdrukken" && (
+        <div className="space-y-6">
+          <div className="bg-white border border-stone-100 rounded-2xl shadow-sm p-6 space-y-4">
+            <div>
+              <h2 className="font-bold text-gray-900 text-base mb-0.5">Printvriendelijke dagplanning</h2>
+              <p className="text-sm text-gray-500">
+                Genereert een A4-overzicht gegroepeerd per dagdeel en taak. Er wordt een nieuw venster geopend — gebruik daarin de afdrukfunctie van je browser (<kbd className="bg-stone-100 border border-stone-200 rounded px-1.5 py-0.5 text-xs font-mono">Ctrl+P</kbd>).
+              </p>
+              <p className="text-xs text-gray-400 mt-1">
+                Het afdrukoverzicht bevat geen e-mailadressen en geen interne notities — geschikt om op papier te delen.
+              </p>
+            </div>
+            <button
+              onClick={() => openPrintWindow(rows, SUPPLIES_LABELS)}
+              className="bg-green-800 text-white text-sm font-semibold rounded-xl px-6 py-3 hover:bg-green-900 transition-colors"
+            >
+              🖨 Open afdrukvenster
+            </button>
+          </div>
+
+          {/* Preview van de groepen */}
+          <div className="space-y-4">
+            <p className="text-xs font-semibold text-green-700 uppercase tracking-wider">Overzicht (preview)</p>
+            {[
+              { label: "Hele dag", shift: "full_day" },
+              { label: "Ochtend",  shift: "morning"  },
+              { label: "Middag",   shift: "afternoon"},
+            ].map(sg => {
+              const shiftRowsAll = rows.filter(r =>
+                !["cancelled","not_needed"].includes(r.planning_status ?? "") && r.final_shift === sg.shift
+              );
+              if (shiftRowsAll.length === 0) return null;
+              return (
+                <div key={sg.shift} className="bg-white border border-stone-100 rounded-2xl shadow-sm overflow-hidden">
+                  <div className="px-5 py-3 bg-gray-50 border-b border-stone-100">
+                    <h3 className="font-semibold text-gray-900 text-sm">{sg.label} — {shiftRowsAll.length} persoon/personen</h3>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr>
+                          {["Naam","Definitieve taak","Status","Spullen"].map(h => (
+                            <th key={h} className="text-left px-4 py-2 text-xs font-semibold text-gray-400">{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-stone-50">
+                        {shiftRowsAll.map(r => (
+                          <tr key={r.id} className="hover:bg-gray-50">
+                            <td className="px-4 py-2 font-medium text-gray-900 whitespace-nowrap">{r.full_name}</td>
+                            <td className="px-4 py-2 text-xs text-gray-600">
+                              {r.final_tasks?.length
+                                ? r.final_tasks.map(t => TASK_LABELS_PLAIN[t] ?? t).join(", ")
+                                : <span className="text-gray-300 italic">—</span>}
+                            </td>
+                            <td className="px-4 py-2">
+                              <span className={`inline-block text-xs font-semibold px-2 py-0.5 rounded-full ${STATUS_BADGE[r.planning_status ?? "new"] ?? ""}`}>
+                                {STATUS_LABEL[r.planning_status ?? "new"]}
+                              </span>
+                            </td>
+                            <td className="px-4 py-2 text-xs text-gray-500">
+                              {(r.selected_supplies ?? []).map(s => SUPPLIES_LABELS[s] ?? s).join(", ") || "—"}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              );
+            })}
+            {rows.filter(r => !["cancelled","not_needed"].includes(r.planning_status ?? "") && (!r.final_shift || r.final_shift === "not_chosen")).length > 0 && (
+              <p className="text-xs text-amber-600">
+                ⚠ Er zijn nog vrijwilligers zonder definitief dagdeel — die verschijnen in het afdrukvenster onder &ldquo;Nog niet ingepland&rdquo;.
+              </p>
+            )}
           </div>
         </div>
       )}
