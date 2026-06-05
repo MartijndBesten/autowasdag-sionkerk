@@ -15,7 +15,6 @@ function addMinutes(time: string, minutes: number): string {
 
 export async function POST(req: NextRequest) {
   try {
-    console.log("[reserveren] start");
     const body = await req.json();
     const {
       full_name, phone, email, license_plate,
@@ -23,6 +22,7 @@ export async function POST(req: NextRequest) {
       extra_donation, notes,
     } = body;
 
+    // ── Validatie ─────────────────────────────────────────────────────────────
     if (!full_name || !email || !package_type || !reservation_date || !reservation_time) {
       return NextResponse.json({ error: "Verplichte velden ontbreken." }, { status: 400 });
     }
@@ -30,17 +30,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Ongeldig pakket." }, { status: 400 });
     }
 
-    console.log("[reserveren] validatie ok, supabase aanmaken");
     const supabase = createAdminClient() as any;
 
-    // ── Open/gesloten check ─────────────────────────────────────────────────────
-    // Bij fout in settings: blokkeren met tijdelijke foutmelding (niet stil doorgaan).
-    console.log("[reserveren] open/gesloten check");
+    // ── Open/gesloten check ────────────────────────────────────────────────────
     const { data: eventRow, error: eventErr } = await supabase
       .from("settings").select("value").eq("key", "event").single();
 
     if (eventErr) {
-      console.error("[reserveren] settings ophalen mislukt:", eventErr.message);
+      console.error("[reserveren] settings niet leesbaar:", eventErr.message);
       return NextResponse.json(
         { error: "Reserveren is tijdelijk niet beschikbaar. Probeer het over enkele minuten opnieuw." },
         { status: 503 }
@@ -48,7 +45,6 @@ export async function POST(req: NextRequest) {
     }
 
     const ev = (eventRow?.value as Record<string, unknown>) ?? {};
-    console.log("[reserveren] reservations_open =", ev.reservations_open);
     if (ev.reservations_open === false) {
       return NextResponse.json(
         { error: "Reserveren is op dit moment gesloten. Neem contact op met de organisatie als u nog een vraag heeft." },
@@ -57,10 +53,7 @@ export async function POST(req: NextRequest) {
     }
 
     // ── Slotbeschikbaarheid ────────────────────────────────────────────────────
-    // Meerdere reserveringen met hetzelfde e-mailadres zijn toegestaan
-    // (gezinsleden, meerdere auto's, aanmelden namens anderen).
-    console.log("[reserveren] slot-check ophalen");
-    const washBays = (ev.wash_bays as number) ?? 2;
+    const washBays    = (ev.wash_bays as number) ?? 2;
     const slotsNeeded = PACKAGE_SLOTS[package_type as PackageType];
 
     const { count: occ1 } = await supabase
@@ -88,7 +81,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    console.log("[reserveren] insert reservering");
+    // ── Database insert ────────────────────────────────────────────────────────
     const price         = PACKAGE_PRICES[package_type] ?? 0;
     const extraDonation = Number(extra_donation) || 0;
 
@@ -114,45 +107,63 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (dbErr) {
-      console.error("[reserveren] DB insert fout:", dbErr);
+      console.error("[reserveren] DB insert mislukt:", dbErr);
       throw dbErr;
     }
 
-    console.log("[reserveren] insert gelukt, mails versturen");
+    console.log("[reserveren] insert gelukt id:", reservation?.id);
 
-    sendReservationEmail({
-      name: full_name, email, phone: phone || null,
-      package: package_type,
-      date: reservation_date, time: reservation_time,
-      price, extra_donation: extraDonation,
-      notes: notes || null,
-    }).catch(e => console.error("[reserveren] admin mail fout:", e));
+    // ── Succes-response direct terugsturen ─────────────────────────────────────
+    // Emails en logging DAARNA in een eigen async blok zodat die nooit
+    // de succesresponse kunnen beïnvloeden.
+    const successResponse = NextResponse.json({ ok: true, id: reservation?.id }, { status: 200 });
 
-    sendReservationConfirmation({
-      name: full_name, email,
-      package: package_type,
-      date: reservation_date, time: reservation_time,
-      price, extra_donation: extraDonation,
-    }).catch(e => console.error("[reserveren] bevestigingsmail fout:", e));
+    void (async () => {
+      try {
+        await sendReservationEmail({
+          name: full_name, email, phone: phone || null,
+          package: package_type,
+          date: reservation_date, time: reservation_time,
+          price, extra_donation: extraDonation,
+          notes: notes || null,
+        });
+        console.log("[reserveren] admin mail verstuurd");
+      } catch (e) { console.error("[reserveren] admin mail fout:", e); }
 
-    supabase.from("email_logs").insert({
-      to_address:     process.env.NOTIFY_EMAIL ?? "",
-      subject:        `Nieuwe reservering — ${full_name}`,
-      template:       "reservation_admin",
-      reference_id:   reservation?.id,
-      reference_type: "car_reservation",
-      status:         "sent",
-    }).catch(() => {});
+      try {
+        await sendReservationConfirmation({
+          name: full_name, email,
+          package: package_type,
+          date: reservation_date, time: reservation_time,
+          price, extra_donation: extraDonation,
+        });
+        console.log("[reserveren] bevestigingsmail verstuurd");
+      } catch (e) { console.error("[reserveren] bevestigingsmail fout:", e); }
 
-    supabase.from("audit_logs").insert({
-      action:     "INSERT",
-      table_name: "car_reservations",
-      record_id:  reservation?.id,
-      new_data:   { full_name, email, package_type, reservation_date, reservation_time },
-    }).catch(() => {});
+      try {
+        await supabase.from("email_logs").insert({
+          to_address:     process.env.NOTIFY_EMAIL ?? "",
+          subject:        `Nieuwe reservering — ${full_name}`,
+          template:       "reservation_admin",
+          reference_id:   reservation?.id,
+          reference_type: "car_reservation",
+          status:         "sent",
+        });
+      } catch { /* silenced */ }
 
-    console.log("[reserveren] succes");
-    return NextResponse.json({ ok: true, id: reservation?.id });
+      try {
+        await supabase.from("audit_logs").insert({
+          action:     "INSERT",
+          table_name: "car_reservations",
+          record_id:  reservation?.id,
+          new_data:   { full_name, email, package_type, reservation_date, reservation_time },
+        });
+      } catch { /* silenced */ }
+    })();
+
+    console.log("[reserveren] success response verzonden");
+    return successResponse;
+
   } catch (err) {
     console.error("[api/reserveren] FOUT:", err);
     return NextResponse.json({ error: "Interne fout bij verwerking." }, { status: 500 });

@@ -8,32 +8,26 @@ const VALID_COST = ["eigen_kosten", "vergoeding_gewenst", "gesponsord", "weet_ik
 
 export async function POST(req: NextRequest) {
   try {
-    console.log("[aanmelden] start");
     const body = await req.json();
     const { name, email, phone, availability, tasks, contribution_details, cost_preference, notes, selected_supplies } = body;
 
+    // ── Validatie ─────────────────────────────────────────────────────────────
     if (!name || !email) {
       return NextResponse.json({ error: "Naam en e-mail zijn verplicht." }, { status: 400 });
     }
-
-    // Telefoon verplicht
     if (!phone || !String(phone).trim()) {
       return NextResponse.json({ error: "Telefoonnummer is verplicht zodat we je op de dag zelf kunnen bereiken." }, { status: 400 });
     }
 
     const normalizedEmail = String(email).trim().toLowerCase();
-
-    console.log("[aanmelden] validatie ok, supabase aanmaken");
     const supabase = createAdminClient() as any;
 
-    // ── Open/gesloten check ─────────────────────────────────────────────────────
-    // Bij fout in settings: blokkeren met tijdelijke foutmelding (niet stil doorgaan).
-    console.log("[aanmelden] open/gesloten check");
+    // ── Open/gesloten check ────────────────────────────────────────────────────
     const { data: eventRow, error: eventErr } = await supabase
       .from("settings").select("value").eq("key", "event").single();
 
     if (eventErr) {
-      console.error("[aanmelden] settings ophalen mislukt:", eventErr.message);
+      console.error("[aanmelden] settings niet leesbaar:", eventErr.message);
       return NextResponse.json(
         { error: "Aanmelden is tijdelijk niet beschikbaar. Probeer het over enkele minuten opnieuw." },
         { status: 503 }
@@ -41,7 +35,6 @@ export async function POST(req: NextRequest) {
     }
 
     const ev = (eventRow?.value as Record<string, unknown>) ?? {};
-    console.log("[aanmelden] volunteers_open =", ev.volunteers_open);
     if (ev.volunteers_open === false) {
       return NextResponse.json(
         { error: "Aanmelden als vrijwilliger is op dit moment gesloten. Neem contact op met de organisatie als je nog een vraag hebt." },
@@ -49,13 +42,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Meerdere aanmeldingen met hetzelfde e-mailadres zijn toegestaan
-    // (gezinsleden, namens anderen, meerdere auto's).
-
+    // ── Bijdragedetails valideren ──────────────────────────────────────────────
     const taskList: string[] = Array.isArray(tasks) ? tasks : [];
     const details: string    = contribution_details ?? "";
 
-    // ── Server-side validatie bijdragedetails ──────────────────────────────────
     if (taskList.includes("bakken")) {
       const bakkenLine = details.split("\n").find(l => l.startsWith("Bakken:"));
       if (!bakkenLine || bakkenLine.replace("Bakken:", "").trim().length === 0) {
@@ -66,9 +56,9 @@ export async function POST(req: NextRequest) {
       }
     }
     if (taskList.includes("spullen")) {
-      const supplies: string[]   = Array.isArray(selected_supplies) ? selected_supplies : [];
-      const andersText           = details.split("\n").find(l => l.startsWith("SpullenAnders:"))?.replace("SpullenAnders:", "").trim() ?? "";
-      const toelichtingText      = details.split("\n").find(l => l.startsWith("SpullenToelichting:"))?.replace("SpullenToelichting:", "").trim() ?? "";
+      const supplies: string[] = Array.isArray(selected_supplies) ? selected_supplies : [];
+      const andersText         = details.split("\n").find(l => l.startsWith("SpullenAnders:"))?.replace("SpullenAnders:", "").trim() ?? "";
+      const toelichtingText    = details.split("\n").find(l => l.startsWith("SpullenToelichting:"))?.replace("SpullenToelichting:", "").trim() ?? "";
       if (supplies.length === 0 && !andersText && !toelichtingText) {
         return NextResponse.json({ error: "Kies minimaal één spullenoptie of vul een toelichting in." }, { status: 400 });
       }
@@ -85,7 +75,7 @@ export async function POST(req: NextRequest) {
 
     const safeAvail: AvailabilityType = VALID_AVAIL.includes(availability) ? availability : "full_day";
 
-    console.log("[aanmelden] insert vrijwilliger");
+    // ── Database insert ────────────────────────────────────────────────────────
     const { data: record, error: dbErr } = await supabase
       .from("volunteer_signups")
       .insert({
@@ -105,45 +95,63 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (dbErr) {
-      console.error("[aanmelden] DB insert fout:", dbErr);
+      console.error("[aanmelden] DB insert mislukt:", dbErr);
       throw dbErr;
     }
 
-    console.log("[aanmelden] insert gelukt, mails versturen");
+    console.log("[aanmelden] insert gelukt id:", record?.id);
 
-    sendVolunteerEmail({
-      name, email: normalizedEmail, phone: String(phone).trim(),
-      availability: safeAvail, tasks: taskList,
-      contribution_details: contribution_details || null,
-      cost_preference: taskList.includes("bakken") ? (cost_preference || null) : null,
-      notes: notes || null,
-    }).catch(e => console.error("[aanmelden] admin mail fout:", e));
+    // ── Succes-response direct terugsturen ─────────────────────────────────────
+    // Emails en logging DAARNA in een eigen async blok zodat die nooit
+    // de succesresponse kunnen beïnvloeden.
+    const successResponse = NextResponse.json({ ok: true }, { status: 200 });
 
-    sendVolunteerConfirmation({
-      name, email: normalizedEmail,
-      availability: safeAvail, tasks: taskList,
-      contribution_details: contribution_details || null,
-      cost_preference: taskList.includes("bakken") ? (cost_preference || null) : null,
-    }).catch(e => console.error("[aanmelden] bevestigingsmail fout:", e));
+    void (async () => {
+      try {
+        await sendVolunteerEmail({
+          name, email: normalizedEmail, phone: String(phone).trim(),
+          availability: safeAvail, tasks: taskList,
+          contribution_details: contribution_details || null,
+          cost_preference: taskList.includes("bakken") ? (cost_preference || null) : null,
+          notes: notes || null,
+        });
+        console.log("[aanmelden] admin mail verstuurd");
+      } catch (e) { console.error("[aanmelden] admin mail fout:", e); }
 
-    supabase.from("email_logs").insert({
-      to_address:     process.env.NOTIFY_EMAIL ?? "",
-      subject:        `Nieuwe vrijwilliger — ${name}`,
-      template:       "volunteer_admin",
-      reference_id:   record?.id,
-      reference_type: "volunteer_signup",
-      status:         "sent",
-    }).catch(() => {});
+      try {
+        await sendVolunteerConfirmation({
+          name, email: normalizedEmail,
+          availability: safeAvail, tasks: taskList,
+          contribution_details: contribution_details || null,
+          cost_preference: taskList.includes("bakken") ? (cost_preference || null) : null,
+        });
+        console.log("[aanmelden] bevestigingsmail verstuurd");
+      } catch (e) { console.error("[aanmelden] bevestigingsmail fout:", e); }
 
-    supabase.from("audit_logs").insert({
-      action:     "INSERT",
-      table_name: "volunteer_signups",
-      record_id:  record?.id,
-      new_data:   { full_name: name, email: normalizedEmail, selected_tasks: taskList },
-    }).catch(() => {});
+      try {
+        await supabase.from("email_logs").insert({
+          to_address:     process.env.NOTIFY_EMAIL ?? "",
+          subject:        `Nieuwe vrijwilliger — ${name}`,
+          template:       "volunteer_admin",
+          reference_id:   record?.id,
+          reference_type: "volunteer_signup",
+          status:         "sent",
+        });
+      } catch { /* silenced */ }
 
-    console.log("[aanmelden] succes");
-    return NextResponse.json({ ok: true });
+      try {
+        await supabase.from("audit_logs").insert({
+          action:     "INSERT",
+          table_name: "volunteer_signups",
+          record_id:  record?.id,
+          new_data:   { full_name: name, email: normalizedEmail, selected_tasks: taskList },
+        });
+      } catch { /* silenced */ }
+    })();
+
+    console.log("[aanmelden] success response verzonden");
+    return successResponse;
+
   } catch (err) {
     console.error("[api/aanmelden] FOUT:", err);
     return NextResponse.json({ error: "Interne fout." }, { status: 500 });
