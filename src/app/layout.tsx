@@ -10,38 +10,43 @@ const jakarta = Plus_Jakarta_Sans({
   weight: ["400", "500", "600", "700", "800"],
 });
 
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "https://autowasdag.sionkerk.nl";
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "https://autowasdagsionkerk.nl";
+
+const TITLE       = "Autowasdag Sionkerk Houten – 11 juli 2026";
+const DESCRIPTION = "Laat uw auto wassen door de jongeren van de Sionkerk. Zaterdag 11 juli 2026 van 09:00 tot 16:00 uur. Kies voor Buitenwas of Compleet en steun de opknapbeurt van de kerkzalen.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),
   title: {
-    default: "Autowasdag Sionkerk Houten",
+    default:  TITLE,
     template: "%s — Autowasdag Sionkerk Houten",
   },
-  description:
-    "Laat uw auto wassen door de jeugdclubs van de Sionkerk op zaterdag 5 september. Koffie, gebak, friet en gezelligheid. Opbrengst voor de zalen.",
-  keywords: ["autowasdag", "Sionkerk", "Houten", "auto wassen", "jeugdclubs", "5 september"],
+  description: DESCRIPTION,
+  keywords: [
+    "autowasdag", "Sionkerk", "Houten", "auto wassen",
+    "jongeren", "11 juli 2026", "Eikenhout 221",
+  ],
   authors: [{ name: "Sionkerk Houten" }],
   openGraph: {
     type:        "website",
     locale:      "nl_NL",
     url:         BASE_URL,
     siteName:    "Autowasdag Sionkerk Houten",
-    title:       "Autowasdag Sionkerk Houten",
-    description: "Laat uw auto wassen door de jongeren van de Sionkerk. Zaterdag 5 september, 09:00–16:00, Eikenhout 221 Houten.",
+    title:       TITLE,
+    description: DESCRIPTION,
     images: [
       {
-        url:   "/og-image.jpg",
+        url:    "/images/hero.jpg",
         width:  1200,
         height: 630,
-        alt:   "Autowasdag Sionkerk Houten",
+        alt:    "Autowasdag Sionkerk Houten – 11 juli 2026",
       },
     ],
   },
   twitter: {
-    card:  "summary_large_image",
-    title: "Autowasdag Sionkerk Houten",
-    description: "Zaterdag 5 september · Eikenhout 221 Houten · Jeugdclubs actie",
+    card:        "summary_large_image",
+    title:       TITLE,
+    description: DESCRIPTION,
   },
   robots: { index: true, follow: true },
   icons: {

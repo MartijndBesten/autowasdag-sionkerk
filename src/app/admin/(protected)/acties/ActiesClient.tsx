@@ -235,7 +235,7 @@ function TabPraktisch({ d, e }: { d: Action; e: SetFn }) {
         <div key={i} className="border border-stone-200 rounded-xl p-3 space-y-2">
           <div className="grid grid-cols-2 gap-2">
             <div><label className={lbl}>Label</label><input value={it.label} onChange={ev => update(i,"label",ev.target.value)} placeholder="Datum" className={fc} /></div>
-            <div><label className={lbl}>Waarde</label><input value={it.value} onChange={ev => update(i,"value",ev.target.value)} placeholder="Zaterdag 5 september" className={fc} /></div>
+            <div><label className={lbl}>Waarde</label><input value={it.value} onChange={ev => update(i,"value",ev.target.value)} placeholder="Zaterdag 11 juli 2026" className={fc} /></div>
           </div>
           <div className="flex gap-2">
             <div className="flex-1"><label className={lbl}>Sub-tekst (optioneel)</label><input value={it.sub ?? ""} onChange={ev => update(i,"sub",ev.target.value)} className={fc} /></div>
