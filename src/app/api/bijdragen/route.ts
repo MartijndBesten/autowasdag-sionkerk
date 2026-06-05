@@ -36,9 +36,9 @@ export async function POST(req: NextRequest) {
         full_name:         name,
         email,
         phone:             phone || null,
-        contribution_type: "donatie",
+        contribution_type: "overig",          // "donatie" bestaat niet in DB — gebruik overig
         description:       amountStr,
-        sponsorship_type:  "losse_bijdrage",
+        sponsorship_type:  "losse_bijdrage",  // marker voor losse bijdragen
         notes:             notes || null,
         status:            "pending",
       })

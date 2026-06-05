@@ -72,14 +72,16 @@ export default function BijdragenPage({ initialData }: { initialData: Contributi
     setData(prev => prev.map(r => r.id === id ? { ...r, status } : r));
   }
 
+  const isLosse = (r: ContributionSignup) => r.sponsorship_type === "losse_bijdrage";
+
   const shown = useMemo(
-    () => tabDonatie ? data.filter(r => r.contribution_type === "donatie") : data,
+    () => tabDonatie ? data.filter(isLosse) : data,
     [data, tabDonatie]
   );
 
   const totalDonaties = useMemo(() => {
     return data
-      .filter(r => r.contribution_type === "donatie" && ["paid_cash","paid_qr"].includes(r.status))
+      .filter(r => isLosse(r) && ["paid_cash","paid_qr"].includes(r.status))
       .reduce((sum, r) => {
         const m = r.description?.match(/€(\d+[,.]?\d*)/);
         return sum + (m ? parseFloat(m[1].replace(",", ".")) : 0);
@@ -119,7 +121,7 @@ export default function BijdragenPage({ initialData }: { initialData: Contributi
       <div className="flex gap-1 border-b border-stone-200">
         {[
           { label: `Alle bijdragen (${data.length})`,        active: !tabDonatie, onClick: () => setTabDonatie(false) },
-          { label: `Losse bijdragen (${data.filter(r=>r.contribution_type==="donatie").length})`, active: tabDonatie, onClick: () => setTabDonatie(true) },
+          { label: `Losse bijdragen (${data.filter(r=>r.sponsorship_type==="losse_bijdrage").length})`, active: tabDonatie, onClick: () => setTabDonatie(true) },
         ].map(t => (
           <button key={t.label} onClick={t.onClick}
             className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors ${t.active ? "bg-white border border-b-white border-stone-200 text-green-800 -mb-px" : "text-gray-500 hover:text-gray-700"}`}>
@@ -152,7 +154,7 @@ export default function BijdragenPage({ initialData }: { initialData: Contributi
                     </span>
                   </td>
                   <td className="px-4 py-3">
-                    {r.contribution_type === "donatie" ? (
+                    {r.sponsorship_type === "losse_bijdrage" ? (
                       <span className="font-semibold text-purple-700">{r.description ?? "—"}</span>
                     ) : (
                       <span className="text-gray-500 text-xs max-w-xs block truncate">{r.description ?? "—"}</span>
