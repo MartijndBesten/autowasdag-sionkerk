@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendReservationEmail, sendReservationConfirmation } from "@/lib/email";
-import { PACKAGE_SLOTS } from "@/lib/timeslots";
+import { computeSlotsNeeded, SLOT_DURATION } from "@/lib/timeslots";
 import type { PackageType } from "@/lib/supabase/types";
 
 const VALID_PACKAGES: PackageType[] = ["buiten_wassen", "compleet"];
@@ -54,7 +54,11 @@ export async function POST(req: NextRequest) {
 
     // ── Slotbeschikbaarheid ────────────────────────────────────────────────────
     const washBays    = (ev.wash_bays as number) ?? 2;
-    const slotsNeeded = PACKAGE_SLOTS[package_type as PackageType];
+    const slotDur     = (ev.slot_duration_minutes as number) ?? SLOT_DURATION;
+    const durBuiten   = (ev.duration_buiten_wassen as number) ?? 20;
+    const durCompleet = (ev.duration_compleet      as number) ?? 40;
+    const pkgDuration = package_type === "compleet" ? durCompleet : durBuiten;
+    const slotsNeeded = computeSlotsNeeded(pkgDuration, slotDur);
 
     const { count: occ1 } = await supabase
       .from("car_reservations")
@@ -67,16 +71,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Dit tijdslot is helaas niet meer beschikbaar." }, { status: 409 });
     }
 
-    if (slotsNeeded > 1) {
-      const nextTime = addMinutes(reservation_time, 20);
-      const { count: occ2 } = await supabase
+    // Controleer alle extra slots die dit pakket nodig heeft
+    for (let i = 1; i < slotsNeeded; i++) {
+      const extraTime = addMinutes(reservation_time, i * slotDur);
+      const { count: occExtra } = await supabase
         .from("car_reservations")
         .select("id", { count: "exact", head: true })
         .eq("reservation_date", reservation_date)
-        .eq("reservation_time", nextTime)
+        .eq("reservation_time", extraTime)
         .neq("status", "cancelled");
 
-      if ((occ2 ?? 0) >= washBays) {
+      if ((occExtra ?? 0) >= washBays) {
         return NextResponse.json({ error: "Dit tijdslot is helaas niet meer beschikbaar." }, { status: 409 });
       }
     }
@@ -93,7 +98,7 @@ export async function POST(req: NextRequest) {
         email,
         license_plate:     license_plate || null,
         package_type:      package_type as PackageType,
-        package_duration:  slotsNeeded * 20,
+        package_duration:  pkgDuration,
         reservation_date,
         reservation_time,
         extra_donation:    extraDonation,
@@ -124,6 +129,7 @@ export async function POST(req: NextRequest) {
           name: full_name, email, phone: phone || null,
           package: package_type,
           date: reservation_date, time: reservation_time,
+          duration_min: pkgDuration,
           price, extra_donation: extraDonation,
           notes: notes || null,
         });
@@ -135,6 +141,7 @@ export async function POST(req: NextRequest) {
           name: full_name, email,
           package: package_type,
           date: reservation_date, time: reservation_time,
+          duration_min: pkgDuration,
           price, extra_donation: extraDonation,
         });
         console.log("[reserveren] bevestigingsmail verstuurd");

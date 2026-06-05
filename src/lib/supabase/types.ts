@@ -85,6 +85,8 @@ export interface EventSettings {
   reservations_open: boolean;
   volunteers_open: boolean;
   max_reservations_per_slot: number;
+  duration_buiten_wassen: number;
+  duration_compleet: number;
 }
 
 export interface PriceSettings {

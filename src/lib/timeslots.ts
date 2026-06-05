@@ -1,6 +1,13 @@
 import type { PackageType } from "./supabase/types";
 
-export const SLOT_DURATION = 20; // minuten
+export const SLOT_DURATION = 20; // standaard slotduur in minuten (raster)
+
+// Hoeveel raster-slots een pakket nodig heeft
+export function computeSlotsNeeded(durationMin: number, slotDurationMin: number): number {
+  return Math.max(1, Math.ceil(durationMin / slotDurationMin));
+}
+
+// Backward compat — gebruik computeSlotsNeeded waar mogelijk
 export const PACKAGE_SLOTS: Record<PackageType, number> = {
   buiten_wassen: 1,
   compleet:      2,
@@ -8,17 +15,15 @@ export const PACKAGE_SLOTS: Record<PackageType, number> = {
 
 // Genereer alle mogelijke tijdsloten tussen start en eind
 export function generateSlots(
-  startTime: string = "09:00",
-  endTime:   string = "16:00",
+  startTime:   string = "09:00",
+  endTime:     string = "16:00",
   intervalMin: number = SLOT_DURATION
 ): string[] {
   const slots: string[] = [];
   const [sh, sm] = startTime.split(":").map(Number);
   const [eh, em] = endTime.split(":").map(Number);
-
   let cur = sh * 60 + sm;
   const end = eh * 60 + em;
-
   while (cur < end) {
     const h = Math.floor(cur / 60).toString().padStart(2, "0");
     const m = (cur % 60).toString().padStart(2, "0");
@@ -33,12 +38,11 @@ export function slotIndex(time: string, slots: string[]): number {
   return slots.indexOf(time);
 }
 
-// Geeft de tijdsloten die een pakket nodig heeft
-export function requiredSlots(startTime: string, pkg: PackageType, allSlots: string[]): string[] {
-  const count = PACKAGE_SLOTS[pkg];
-  const idx   = slotIndex(startTime, allSlots);
+// Geeft de tijdsloten die een reservering nodig heeft
+export function requiredSlots(startTime: string, slotsNeeded: number, allSlots: string[]): string[] {
+  const idx = slotIndex(startTime, allSlots);
   if (idx === -1) return [];
-  return allSlots.slice(idx, idx + count);
+  return allSlots.slice(idx, idx + slotsNeeded);
 }
 
 // Formaatteer een slot voor weergave
@@ -47,13 +51,11 @@ export function formatSlot(time: string): string {
   return `${h}:${m} uur`;
 }
 
-// Bereken eindtijd van een pakket
-export function endTime(startTime: string, pkg: PackageType): string {
+// Bereken eindtijd op basis van starttijd en duur in minuten
+export function calcEndTime(startTime: string, durationMin: number): string {
   const [h, m] = startTime.split(":").map(Number);
-  const total = h * 60 + m + PACKAGE_SLOTS[pkg] * SLOT_DURATION;
-  const eh = Math.floor(total / 60).toString().padStart(2, "0");
-  const em = (total % 60).toString().padStart(2, "0");
-  return `${eh}:${em}`;
+  const total  = h * 60 + m + durationMin;
+  return `${Math.floor(total / 60).toString().padStart(2, "0")}:${(total % 60).toString().padStart(2, "0")}`;
 }
 
 // Type voor beschikbaar slot (terugkomend van API)
@@ -64,17 +66,20 @@ export interface AvailableSlot {
   availableBays: number;
 }
 
-// Filter slots die beschikbaar zijn voor een compleet pakket
-// (slot + volgend slot moeten allebei vrij zijn)
+// Filter slots die beschikbaar zijn voor een pakket met N opeenvolgende slots nodig
 export function filterSlotsForPackage(
-  slots: AvailableSlot[],
-  pkg: PackageType,
-  washBays: number
+  slots:       AvailableSlot[],
+  slotsNeeded: number,
+  washBays:    number
 ): AvailableSlot[] {
-  if (pkg !== "compleet") return slots.filter(s => s.availableBays > 0);
-
+  if (slotsNeeded <= 1) {
+    return slots.filter(s => s.availableBays > 0);
+  }
   return slots.filter((slot, idx) => {
-    const next = slots[idx + 1];
-    return slot.availableBays >= 1 && next && next.availableBays >= 1;
+    for (let i = 0; i < slotsNeeded; i++) {
+      const s = slots[idx + i];
+      if (!s || s.availableBays < 1) return false;
+    }
+    return true;
   });
 }

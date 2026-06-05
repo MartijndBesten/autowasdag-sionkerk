@@ -6,12 +6,19 @@ import type { PackageType } from "@/lib/supabase/types";
 import type { AvailableSlot } from "@/lib/timeslots";
 import { formatEventDate } from "@/lib/event";
 
-const PACKAGE_OPTIONS: { value: PackageType; label: string; duration: string; price: string }[] = [
-  { value: "buiten_wassen", label: "Buitenkant wassen",          duration: "± 20 min", price: "€7,50" },
-  { value: "compleet",      label: "Compleet (buiten + binnen)", duration: "± 40 min", price: "€12,50" },
-];
-
-export default function ReserverenPageForm({ eventDate }: { eventDate: string }) {
+export default function ReserverenPageForm({
+  eventDate,
+  durationBuitenWassen = 20,
+  durationCompleet     = 40,
+}: {
+  eventDate: string;
+  durationBuitenWassen?: number;
+  durationCompleet?: number;
+}) {
+  const PACKAGE_OPTIONS: { value: PackageType; label: string; duration: string; price: string }[] = [
+    { value: "buiten_wassen", label: "Buitenkant wassen",          duration: `± ${durationBuitenWassen} min`, price: "€7,50" },
+    { value: "compleet",      label: "Compleet (buiten + binnen)", duration: `± ${durationCompleet} min`,     price: "€12,50" },
+  ];
   const searchParams = useSearchParams();
   const router       = useRouter();
 
@@ -92,9 +99,10 @@ export default function ReserverenPageForm({ eventDate }: { eventDate: string })
       <h2 className="font-bold text-green-950 text-2xl mb-3">Reservering bevestigd!</h2>
       <p className="text-gray-500 mb-2">Bedankt, <strong>{form.full_name}</strong>.</p>
       <p className="text-gray-400 text-sm max-w-sm mx-auto">
-        Uw reservering is bevestigd. U bent ingeschreven voor keuze{" "}
+        Uw reservering is bevestigd. U bent ingeschreven voor{" "}
         <strong>{PACKAGE_OPTIONS.find(p => p.value === form.package_type)?.label}</strong>{" "}
-        op <strong>{formatEventDate(form.reservation_date)}</strong> om <strong>{form.reservation_time}</strong>.
+        op <strong>{formatEventDate(form.reservation_date)}</strong> om <strong>{form.reservation_time}</strong>{" "}
+        (ca. {form.package_type === "compleet" ? durationCompleet : durationBuitenWassen} minuten).
         Kom 10 minuten voor het gekozen tijdslot naar de autowasdag. We zien u graag op zaterdag 11 juli.
         U ontvangt hiervan een bevestiging per e-mail.
       </p>

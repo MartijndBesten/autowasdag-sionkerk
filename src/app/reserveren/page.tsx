@@ -17,16 +17,19 @@ export default async function ReserverenPage() {
   const eventDate     = action?.event_date ?? await getEventDate();
   const dateFormatted = formatEventDate(eventDate);
 
-  // Open/gesloten check — lees uit settings key "event"
-  let reservationsOpen = true;
+  // Open/gesloten check + pakketduur ophalen
+  let reservationsOpen     = true;
+  let durationBuitenWassen = 20;
+  let durationCompleet     = 40;
   try {
     const supabase = createAdminClient() as any;
     const { data } = await supabase
       .from("settings").select("value").eq("key", "event").single();
-    if ((data?.value as Record<string, unknown>)?.reservations_open === false) {
-      reservationsOpen = false;
-    }
-  } catch { /* val terug op open */ }
+    const ev = (data?.value as Record<string, unknown>) ?? {};
+    if (ev.reservations_open === false) reservationsOpen = false;
+    if (typeof ev.duration_buiten_wassen === "number") durationBuitenWassen = ev.duration_buiten_wassen;
+    if (typeof ev.duration_compleet      === "number") durationCompleet      = ev.duration_compleet;
+  } catch { /* val terug op defaults */ }
 
   return (
     <main className="min-h-screen" style={{ background: "linear-gradient(160deg, #faf6e8 0%, #f5edd6 60%, #e8f5ef 100%)" }}>
@@ -82,7 +85,11 @@ export default async function ReserverenPage() {
         <div className="bg-white rounded-3xl shadow-[0_4px_24px_rgba(0,0,0,0.07)] p-8">
           {reservationsOpen ? (
             <Suspense fallback={<p className="text-gray-400 text-sm py-4">Formulier laden…</p>}>
-              <ReserverenForm eventDate={eventDate} />
+              <ReserverenForm
+                eventDate={eventDate}
+                durationBuitenWassen={durationBuitenWassen}
+                durationCompleet={durationCompleet}
+              />
             </Suspense>
           ) : (
             <div className="py-8 text-center space-y-4">

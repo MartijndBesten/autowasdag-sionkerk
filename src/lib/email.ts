@@ -116,6 +116,12 @@ async function send(subject: string, html: string): Promise<SendResult> {
 
 // ── Autowas-reservering ──────────────────────────────────────────────────────
 
+function addMins(time: string, minutes: number): string {
+  const [h, m] = time.split(":").map(Number);
+  const total  = h * 60 + m + minutes;
+  return `${Math.floor(total / 60).toString().padStart(2, "0")}:${(total % 60).toString().padStart(2, "0")}`;
+}
+
 export async function sendReservationEmail(data: {
   name: string;
   email: string;
@@ -123,6 +129,7 @@ export async function sendReservationEmail(data: {
   package: string;
   date: string;
   time: string;
+  duration_min?: number;
   price?: number;
   extra_donation?: number;
   notes: string | null;
@@ -133,10 +140,12 @@ export async function sendReservationEmail(data: {
     basis:         "Basis (buitenwas)",
   };
 
-  const priceStr = data.price != null ? `€${data.price.toFixed(2).replace(".", ",")}` : null;
+  const priceStr    = data.price != null ? `€${data.price.toFixed(2).replace(".", ",")}` : null;
   const donationStr = data.extra_donation && data.extra_donation > 0
     ? `€${data.extra_donation.toFixed(2).replace(".", ",")}`
     : null;
+  const durMin      = data.duration_min ?? (data.package === "compleet" ? 40 : 20);
+  const endTimeStr  = addMins(data.time, durMin);
 
   const html = buildHtml({
     typeLabel:   "Nieuwe reservering",
@@ -150,7 +159,9 @@ export async function sendReservationEmail(data: {
       ["Prijs",           priceStr],
       ["Extra donatie",   donationStr],
       ["Datum",           data.date],
-      ["Tijdslot",        `${data.time} uur`],
+      ["Starttijd",       `${data.time} uur`],
+      ["Verwachte duur",  `ca. ${durMin} minuten`],
+      ["Eindtijd",        `${endTimeStr} uur`],
       ["Opmerkingen",     data.notes],
       ["Ingediend op",    now()],
     ],
@@ -168,6 +179,7 @@ export async function sendReservationConfirmation(data: {
   package: string;
   date: string;
   time: string;
+  duration_min?: number;
   price?: number;
   extra_donation?: number;
 }): Promise<SendResult> {
@@ -183,22 +195,26 @@ export async function sendReservationConfirmation(data: {
     return s.charAt(0).toUpperCase() + s.slice(1);
   }
 
-  const priceStr = data.price != null ? `€${data.price.toFixed(2).replace(".", ",")}` : null;
+  const priceStr    = data.price != null ? `€${data.price.toFixed(2).replace(".", ",")}` : null;
   const donationStr = data.extra_donation && data.extra_donation > 0
     ? `€${data.extra_donation.toFixed(2).replace(".", ",")}`
     : null;
+  const durMin      = data.duration_min ?? (data.package === "compleet" ? 40 : 20);
+  const endTimeStr  = addMins(data.time, durMin);
 
   const html = buildHtml({
     typeLabel:   "Uw reservering",
     accentColor: "#155237",
     rows: [
-      ["Naam",          data.name],
-      ["Pakket",        packageLabels[data.package] ?? data.package],
-      ["Prijs",         priceStr],
-      ["Extra donatie", donationStr],
-      ["Datum",         formatDate(data.date)],
-      ["Tijdslot",      `${data.time} uur`],
-      ["Betaling",      "Aan de kassa bij aankomst (contant of QR)"],
+      ["Naam",            data.name],
+      ["Pakket",          packageLabels[data.package] ?? data.package],
+      ["Prijs",           priceStr],
+      ["Extra donatie",   donationStr],
+      ["Datum",           formatDate(data.date)],
+      ["Starttijd",       `${data.time} uur`],
+      ["Verwachte duur",  `ca. ${durMin} minuten`],
+      ["Eindtijd",        `ca. ${endTimeStr} uur`],
+      ["Betaling",        "Aan de kassa bij aankomst (contant of QR)"],
     ],
     timestamp: now(),
     footer: "Kom 10 minuten voor het gekozen tijdslot naar de autowasdag op het terrein van de Sionkerk, Eikenhout 221, Houten.<br>Moet u uw reservering wijzigen of annuleren? Reageer dan op deze bevestigingsmail of neem contact op met de organisatie.",

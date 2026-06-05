@@ -55,6 +55,17 @@ function fmtDate(dateStr: string): string {
   return `${d}-${m}-${y}`;
 }
 
+function addMins(time: string, minutes: number): string {
+  const [h, m] = time.split(":").map(Number);
+  const total  = h * 60 + m + minutes;
+  return `${Math.floor(total / 60).toString().padStart(2, "0")}:${(total % 60).toString().padStart(2, "0")}`;
+}
+
+function pkgDuration(r: CarReservation): number {
+  if (r.package_duration && r.package_duration > 0) return r.package_duration;
+  return r.package_type === "compleet" ? 40 : 20;
+}
+
 // Zaterdag 11 juli voor compacte weergave
 function fmtDateShort(dateStr: string): string {
   if (!dateStr) return "—";
@@ -78,24 +89,31 @@ function exportCSV(rows: CarReservation[]) {
   const headers = [
     "Naam", "E-mail", "Telefoon", "Kenteken",
     "Pakket", "Prijs (€)", "Extra donatie (€)",
-    "Datum", "Tijdstip",
+    "Datum", "Starttijd", "Duur (min)", "Eindtijd",
     "Status", "Betaling",
     "Opmerkingen",
   ];
-  const lines = rows.map(r => [
-    fmt(r.full_name),
-    fmt(r.email),
-    fmt(r.phone),
-    fmt(r.license_plate),
-    fmt(PACKAGE_LABELS[r.package_type] ?? r.package_type),
-    fmt((PACKAGE_PRICES[r.package_type] ?? 0).toFixed(2)),
-    fmt((r.extra_donation ?? 0).toFixed(2)),
-    fmt(fmtDate(r.reservation_date)),
-    fmt(String(r.reservation_time).slice(0, 5)),
-    fmt(STATUS_LABELS[r.status] ?? r.status),
-    fmt(PAYMENT_LABELS[r.payment_status] ?? r.payment_status),
-    fmt(r.notes),
-  ].map(csvCell).join(SEP));
+  const lines = rows.map(r => {
+    const dur     = pkgDuration(r);
+    const start   = String(r.reservation_time).slice(0, 5);
+    const endT    = addMins(start, dur);
+    return [
+      fmt(r.full_name),
+      fmt(r.email),
+      fmt(r.phone),
+      fmt(r.license_plate),
+      fmt(PACKAGE_LABELS[r.package_type] ?? r.package_type),
+      fmt((PACKAGE_PRICES[r.package_type] ?? 0).toFixed(2)),
+      fmt((r.extra_donation ?? 0).toFixed(2)),
+      fmt(fmtDate(r.reservation_date)),
+      fmt(start),
+      fmt(String(dur)),
+      fmt(endT),
+      fmt(STATUS_LABELS[r.status] ?? r.status),
+      fmt(PAYMENT_LABELS[r.payment_status] ?? r.payment_status),
+      fmt(r.notes),
+    ].map(csvCell).join(SEP);
+  });
 
   const csv  = "﻿" + [headers.map(csvCell).join(SEP), ...lines].join("\r\n");
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
@@ -213,7 +231,11 @@ export default function ReserveringenClient({ initialData }: { initialData: CarR
                     </p>
                   </td>
                   <td className="px-4 py-3 text-gray-600 whitespace-nowrap font-medium">{fmtDateShort(r.reservation_date)}</td>
-                  <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{String(r.reservation_time).slice(0,5)}</td>
+                  <td className="px-4 py-3 text-gray-600 whitespace-nowrap">
+                    <span className="font-medium">{String(r.reservation_time).slice(0,5)}</span>
+                    <span className="text-gray-400 text-xs"> – {addMins(String(r.reservation_time).slice(0,5), pkgDuration(r))}</span>
+                    <span className="block text-xs text-gray-400">{pkgDuration(r)} min</span>
+                  </td>
                   <td className="px-4 py-3 text-gray-500 text-xs">{r.phone ?? "—"}</td>
                   <td className="px-4 py-3 text-gray-500 font-mono text-xs">{r.license_plate ?? "—"}</td>
                   <td className="px-4 py-3">

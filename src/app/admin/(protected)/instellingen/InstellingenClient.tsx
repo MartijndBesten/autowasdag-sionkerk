@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
-interface EventSettings { date: string; start_time: string; end_time: string; wash_bays: number; reservations_open: boolean; volunteers_open: boolean; }
+interface EventSettings { date: string; start_time: string; end_time: string; wash_bays: number; reservations_open: boolean; volunteers_open: boolean; duration_buiten_wassen: number; duration_compleet: number; }
 interface PriceSettings { buiten_wassen: number; compleet: number; }
 interface SupplyOption  { value: string; label: string; }
 
@@ -35,7 +35,10 @@ function labelToValue(label: string): string {
 }
 
 export default function InstellingenClient({ initialSettings }: { initialSettings: Record<string, unknown> }) {
-  const ev0  = (initialSettings.event   as EventSettings) ?? { date:"", start_time:"09:00", end_time:"16:00", wash_bays:2, reservations_open:true, volunteers_open:true };
+  const ev0  = (initialSettings.event   as EventSettings) ?? { date:"", start_time:"09:00", end_time:"16:00", wash_bays:2, reservations_open:true, volunteers_open:true, duration_buiten_wassen:20, duration_compleet:40 };
+  // Zorg dat pakketduur altijd een getal heeft (bestaande instellingen zonder deze velden)
+  if (!ev0.duration_buiten_wassen) ev0.duration_buiten_wassen = 20;
+  if (!ev0.duration_compleet)      ev0.duration_compleet      = 40;
   const pr0  = (initialSettings.prices  as PriceSettings) ?? { buiten_wassen:7.50, compleet:12.50 };
   const sup0 = Array.isArray(initialSettings.volunteer_supplies) && (initialSettings.volunteer_supplies as SupplyOption[]).length > 0
     ? (initialSettings.volunteer_supplies as SupplyOption[])
@@ -125,6 +128,32 @@ export default function InstellingenClient({ initialSettings }: { initialSetting
               className="w-4 h-4 rounded text-green-700" />
             <span className="text-sm text-gray-700">Vrijwilligers open</span>
           </label>
+        </div>
+      </div>
+
+      {/* Pakketduur */}
+      <div className="bg-white rounded-2xl shadow-sm border border-stone-100 p-6 space-y-4">
+        <div>
+          <h2 className="font-semibold text-gray-900">Pakketduur</h2>
+          <p className="text-xs text-gray-400 mt-1">De pakketduur bepaalt hoeveel tijd en capaciteit een reservering in de planning gebruikt. Het tijdslotrooster loopt altijd in stappen van 20 minuten.</p>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className={lbl}>Buiten wassen (minuten)</label>
+            <input type="number" min="10" max="120" step="5"
+              value={event.duration_buiten_wassen}
+              onChange={e => setEvent(p => ({...p, duration_buiten_wassen: Number(e.target.value)}))}
+              className={f} />
+            <p className="text-xs text-gray-400 mt-1">Standaard: 20 min</p>
+          </div>
+          <div>
+            <label className={lbl}>Compleet (minuten)</label>
+            <input type="number" min="10" max="180" step="5"
+              value={event.duration_compleet}
+              onChange={e => setEvent(p => ({...p, duration_compleet: Number(e.target.value)}))}
+              className={f} />
+            <p className="text-xs text-gray-400 mt-1">Standaard: 40 min</p>
+          </div>
         </div>
       </div>
 
