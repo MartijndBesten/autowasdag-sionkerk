@@ -118,58 +118,49 @@ export async function POST(req: NextRequest) {
 
     console.log("[reserveren] insert gelukt id:", reservation?.id);
 
-    // ── Succes-response direct terugsturen ─────────────────────────────────────
-    // Emails en logging DAARNA in een eigen async blok zodat die nooit
-    // de succesresponse kunnen beïnvloeden.
-    const successResponse = NextResponse.json({ ok: true, id: reservation?.id }, { status: 200 });
+    // ── Mails versturen (awaited binnen de request-lifetime) ──────────────────
+    try {
+      await sendReservationEmail({
+        name: full_name, email, phone: phone || null,
+        package: package_type,
+        date: reservation_date, time: reservation_time,
+        duration_min: pkgDuration,
+        price, extra_donation: extraDonation,
+        notes: notes || null,
+      });
+      console.log("[reserveren] admin mail verstuurd");
+    } catch (e) { console.error("[reserveren] admin mail fout:", e); }
 
-    void (async () => {
-      try {
-        await sendReservationEmail({
-          name: full_name, email, phone: phone || null,
-          package: package_type,
-          date: reservation_date, time: reservation_time,
-          duration_min: pkgDuration,
-          price, extra_donation: extraDonation,
-          notes: notes || null,
-        });
-        console.log("[reserveren] admin mail verstuurd");
-      } catch (e) { console.error("[reserveren] admin mail fout:", e); }
+    try {
+      await sendReservationConfirmation({
+        name: full_name, email,
+        package: package_type,
+        date: reservation_date, time: reservation_time,
+        duration_min: pkgDuration,
+        price, extra_donation: extraDonation,
+      });
+      console.log("[reserveren] bevestigingsmail verstuurd");
+    } catch (e) { console.error("[reserveren] bevestigingsmail fout:", e); }
 
-      try {
-        await sendReservationConfirmation({
-          name: full_name, email,
-          package: package_type,
-          date: reservation_date, time: reservation_time,
-          duration_min: pkgDuration,
-          price, extra_donation: extraDonation,
-        });
-        console.log("[reserveren] bevestigingsmail verstuurd");
-      } catch (e) { console.error("[reserveren] bevestigingsmail fout:", e); }
+    // Logging (niet-kritiek, fire-and-forget)
+    supabase.from("email_logs").insert({
+      to_address:     process.env.NOTIFY_EMAIL ?? "",
+      subject:        `Nieuwe reservering — ${full_name}`,
+      template:       "reservation_admin",
+      reference_id:   reservation?.id,
+      reference_type: "car_reservation",
+      status:         "sent",
+    }).catch(() => {});
 
-      try {
-        await supabase.from("email_logs").insert({
-          to_address:     process.env.NOTIFY_EMAIL ?? "",
-          subject:        `Nieuwe reservering — ${full_name}`,
-          template:       "reservation_admin",
-          reference_id:   reservation?.id,
-          reference_type: "car_reservation",
-          status:         "sent",
-        });
-      } catch { /* silenced */ }
-
-      try {
-        await supabase.from("audit_logs").insert({
-          action:     "INSERT",
-          table_name: "car_reservations",
-          record_id:  reservation?.id,
-          new_data:   { full_name, email, package_type, reservation_date, reservation_time },
-        });
-      } catch { /* silenced */ }
-    })();
+    supabase.from("audit_logs").insert({
+      action:     "INSERT",
+      table_name: "car_reservations",
+      record_id:  reservation?.id,
+      new_data:   { full_name, email, package_type, reservation_date, reservation_time },
+    }).catch(() => {});
 
     console.log("[reserveren] success response verzonden");
-    return successResponse;
+    return NextResponse.json({ ok: true, id: reservation?.id }, { status: 200 });
 
   } catch (err) {
     console.error("[api/reserveren] FOUT:", err);

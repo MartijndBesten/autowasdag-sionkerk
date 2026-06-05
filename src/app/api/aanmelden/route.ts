@@ -101,56 +101,48 @@ export async function POST(req: NextRequest) {
 
     console.log("[aanmelden] insert gelukt id:", record?.id);
 
-    // ── Succes-response direct terugsturen ─────────────────────────────────────
-    // Emails en logging DAARNA in een eigen async blok zodat die nooit
-    // de succesresponse kunnen beïnvloeden.
-    const successResponse = NextResponse.json({ ok: true }, { status: 200 });
+    // ── Mails versturen (awaited binnen de request-lifetime) ──────────────────
+    // Elk in eigen try-catch: mailfout blokkeert de 200-response NIET.
+    try {
+      await sendVolunteerEmail({
+        name, email: normalizedEmail, phone: String(phone).trim(),
+        availability: safeAvail, tasks: taskList,
+        contribution_details: contribution_details || null,
+        cost_preference: taskList.includes("bakken") ? (cost_preference || null) : null,
+        notes: notes || null,
+      });
+      console.log("[aanmelden] admin mail verstuurd");
+    } catch (e) { console.error("[aanmelden] admin mail fout:", e); }
 
-    void (async () => {
-      try {
-        await sendVolunteerEmail({
-          name, email: normalizedEmail, phone: String(phone).trim(),
-          availability: safeAvail, tasks: taskList,
-          contribution_details: contribution_details || null,
-          cost_preference: taskList.includes("bakken") ? (cost_preference || null) : null,
-          notes: notes || null,
-        });
-        console.log("[aanmelden] admin mail verstuurd");
-      } catch (e) { console.error("[aanmelden] admin mail fout:", e); }
+    try {
+      await sendVolunteerConfirmation({
+        name, email: normalizedEmail,
+        availability: safeAvail, tasks: taskList,
+        contribution_details: contribution_details || null,
+        cost_preference: taskList.includes("bakken") ? (cost_preference || null) : null,
+      });
+      console.log("[aanmelden] bevestigingsmail verstuurd");
+    } catch (e) { console.error("[aanmelden] bevestigingsmail fout:", e); }
 
-      try {
-        await sendVolunteerConfirmation({
-          name, email: normalizedEmail,
-          availability: safeAvail, tasks: taskList,
-          contribution_details: contribution_details || null,
-          cost_preference: taskList.includes("bakken") ? (cost_preference || null) : null,
-        });
-        console.log("[aanmelden] bevestigingsmail verstuurd");
-      } catch (e) { console.error("[aanmelden] bevestigingsmail fout:", e); }
+    // Logging (niet-kritiek, fire-and-forget)
+    supabase.from("email_logs").insert({
+      to_address:     process.env.NOTIFY_EMAIL ?? "",
+      subject:        `Nieuwe vrijwilliger — ${name}`,
+      template:       "volunteer_admin",
+      reference_id:   record?.id,
+      reference_type: "volunteer_signup",
+      status:         "sent",
+    }).catch(() => {});
 
-      try {
-        await supabase.from("email_logs").insert({
-          to_address:     process.env.NOTIFY_EMAIL ?? "",
-          subject:        `Nieuwe vrijwilliger — ${name}`,
-          template:       "volunteer_admin",
-          reference_id:   record?.id,
-          reference_type: "volunteer_signup",
-          status:         "sent",
-        });
-      } catch { /* silenced */ }
-
-      try {
-        await supabase.from("audit_logs").insert({
-          action:     "INSERT",
-          table_name: "volunteer_signups",
-          record_id:  record?.id,
-          new_data:   { full_name: name, email: normalizedEmail, selected_tasks: taskList },
-        });
-      } catch { /* silenced */ }
-    })();
+    supabase.from("audit_logs").insert({
+      action:     "INSERT",
+      table_name: "volunteer_signups",
+      record_id:  record?.id,
+      new_data:   { full_name: name, email: normalizedEmail, selected_tasks: taskList },
+    }).catch(() => {});
 
     console.log("[aanmelden] success response verzonden");
-    return successResponse;
+    return NextResponse.json({ ok: true }, { status: 200 });
 
   } catch (err) {
     console.error("[api/aanmelden] FOUT:", err);
