@@ -33,24 +33,23 @@ export async function POST(req: NextRequest) {
     console.log("[reserveren] validatie ok, supabase aanmaken");
     const supabase = createAdminClient() as any;
 
-    // ── Open/gesloten check (defensief: bij fout behandelen als open) ────────────
-    let reservationsOpen = true;
-    try {
-      console.log("[reserveren] open/gesloten check");
-      const { data: eventRow, error: eventErr } = await supabase
-        .from("settings").select("value").eq("key", "event").single();
-      if (eventErr) {
-        console.warn("[reserveren] settings ophalen mislukt:", eventErr.message);
-      } else {
-        const ev = (eventRow?.value as Record<string, unknown>) ?? {};
-        if (ev.reservations_open === false) reservationsOpen = false;
-        console.log("[reserveren] reservations_open =", ev.reservations_open);
-      }
-    } catch (e) {
-      console.warn("[reserveren] open/gesloten check crashed:", e);
+    // ── Open/gesloten check ─────────────────────────────────────────────────────
+    // Bij fout in settings: blokkeren met tijdelijke foutmelding (niet stil doorgaan).
+    console.log("[reserveren] open/gesloten check");
+    const { data: eventRow, error: eventErr } = await supabase
+      .from("settings").select("value").eq("key", "event").single();
+
+    if (eventErr) {
+      console.error("[reserveren] settings ophalen mislukt:", eventErr.message);
+      return NextResponse.json(
+        { error: "Reserveren is tijdelijk niet beschikbaar. Probeer het over enkele minuten opnieuw." },
+        { status: 503 }
+      );
     }
 
-    if (!reservationsOpen) {
+    const ev = (eventRow?.value as Record<string, unknown>) ?? {};
+    console.log("[reserveren] reservations_open =", ev.reservations_open);
+    if (ev.reservations_open === false) {
       return NextResponse.json(
         { error: "Reserveren is op dit moment gesloten. Neem contact op met de organisatie als u nog een vraag heeft." },
         { status: 403 }
@@ -58,10 +57,10 @@ export async function POST(req: NextRequest) {
     }
 
     // ── Slotbeschikbaarheid ────────────────────────────────────────────────────
+    // Meerdere reserveringen met hetzelfde e-mailadres zijn toegestaan
+    // (gezinsleden, meerdere auto's, aanmelden namens anderen).
     console.log("[reserveren] slot-check ophalen");
-    const { data: settingRow } = await supabase
-      .from("settings").select("value").eq("key", "event").single();
-    const washBays    = ((settingRow?.value as Record<string, unknown>)?.wash_bays as number) ?? 2;
+    const washBays = (ev.wash_bays as number) ?? 2;
     const slotsNeeded = PACKAGE_SLOTS[package_type as PackageType];
 
     const { count: occ1 } = await supabase

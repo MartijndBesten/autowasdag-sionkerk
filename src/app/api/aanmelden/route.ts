@@ -26,50 +26,31 @@ export async function POST(req: NextRequest) {
     console.log("[aanmelden] validatie ok, supabase aanmaken");
     const supabase = createAdminClient() as any;
 
-    // ── Open/gesloten check (defensief: bij fout behandelen als open) ────────────
-    let volunteersOpen = true;
-    try {
-      console.log("[aanmelden] open/gesloten check");
-      const { data: eventRow, error: eventErr } = await supabase
-        .from("settings").select("value").eq("key", "event").single();
-      if (eventErr) {
-        console.warn("[aanmelden] settings ophalen mislukt:", eventErr.message);
-      } else {
-        const ev = (eventRow?.value as Record<string, unknown>) ?? {};
-        if (ev.volunteers_open === false) volunteersOpen = false;
-        console.log("[aanmelden] volunteers_open =", ev.volunteers_open);
-      }
-    } catch (e) {
-      console.warn("[aanmelden] open/gesloten check crashed:", e);
+    // ── Open/gesloten check ─────────────────────────────────────────────────────
+    // Bij fout in settings: blokkeren met tijdelijke foutmelding (niet stil doorgaan).
+    console.log("[aanmelden] open/gesloten check");
+    const { data: eventRow, error: eventErr } = await supabase
+      .from("settings").select("value").eq("key", "event").single();
+
+    if (eventErr) {
+      console.error("[aanmelden] settings ophalen mislukt:", eventErr.message);
+      return NextResponse.json(
+        { error: "Aanmelden is tijdelijk niet beschikbaar. Probeer het over enkele minuten opnieuw." },
+        { status: 503 }
+      );
     }
 
-    if (!volunteersOpen) {
+    const ev = (eventRow?.value as Record<string, unknown>) ?? {};
+    console.log("[aanmelden] volunteers_open =", ev.volunteers_open);
+    if (ev.volunteers_open === false) {
       return NextResponse.json(
         { error: "Aanmelden als vrijwilliger is op dit moment gesloten. Neem contact op met de organisatie als je nog een vraag hebt." },
         { status: 403 }
       );
     }
 
-    // ── Dubbele aanmelding voorkomen (defensief: bij fout doorgaan) ─────────────
-    try {
-      console.log("[aanmelden] dubbele aanmelding check");
-      const { count: existing, error: dupErr } = await supabase
-        .from("volunteer_signups")
-        .select("id", { count: "exact", head: true })
-        .eq("email", normalizedEmail)
-        .eq("is_deleted", false);
-
-      if (dupErr) {
-        console.warn("[aanmelden] duplicaat-check fout:", dupErr.message);
-      } else if ((existing ?? 0) > 0) {
-        return NextResponse.json(
-          { error: "Er bestaat al een aanmelding met dit e-mailadres. Wil je iets wijzigen? Neem dan contact op met de organisatie." },
-          { status: 409 }
-        );
-      }
-    } catch (e) {
-      console.warn("[aanmelden] duplicaat-check crashed:", e);
-    }
+    // Meerdere aanmeldingen met hetzelfde e-mailadres zijn toegestaan
+    // (gezinsleden, namens anderen, meerdere auto's).
 
     const taskList: string[] = Array.isArray(tasks) ? tasks : [];
     const details: string    = contribution_details ?? "";
