@@ -7,13 +7,13 @@ const DEFAULT_PACKAGES = [
   {
     id: "buiten_wassen", name: "Buitenkant wassen", tagline: "Alleen buitenkant",
     description: "We wassen de buitenkant van de auto.",
-    includes: ["Buitenkant wassen", "Met zorg door de jongeren", "Opbrengst voor de zalen"],
+    includes: ["Buitenkant wassen", "Ca. 20 minuten", "Met zorg door de jongeren", "Opbrengst voor de zalen"],
     variant: "light" as const,
   },
   {
     id: "compleet", name: "Compleet", tagline: "Buiten + binnen",
     description: "We wassen de buitenkant, stofzuigen de binnenkant en doen een eenvoudige interieurreiniging.",
-    includes: ["Buitenkant wassen", "Binnenkant stofzuigen", "Eenvoudige interieurreiniging"],
+    includes: ["Buitenkant wassen", "Binnenkant stofzuigen", "Eenvoudige interieurreiniging", "Ca. 40 minuten"],
     variant: "featured" as const,
   },
 ];

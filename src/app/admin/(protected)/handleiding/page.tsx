@@ -141,6 +141,73 @@ export default function HandleidingPage() {
         </div>
       </section>
 
+      {/* Sectie: Pakketduur en capaciteit */}
+      <section className="bg-white border border-stone-100 rounded-2xl shadow-sm overflow-hidden">
+        <div className="px-6 py-4 bg-blue-50 border-b border-blue-100">
+          <h2 className="font-bold text-blue-900 text-base">Pakketduur en capaciteit</h2>
+          <p className="text-sm text-blue-700 mt-0.5">Ga naar Instellingen → Pakketduur om de duur per pakket aan te passen</p>
+        </div>
+        <div className="px-6 py-5 space-y-5 text-sm text-gray-700">
+
+          <p>
+            De website rekent intern met een basisrooster van <strong>20 minuten</strong> per tijdblok. Pakketten worden uitgedrukt in een aantal van die blokken.
+          </p>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm border border-stone-100 rounded-xl overflow-hidden">
+              <thead className="bg-stone-50">
+                <tr>
+                  {["Pakket","Standaard duur","Blokken","Wat het betekent"].map(h => (
+                    <th key={h} className="text-left px-4 py-2 text-xs font-semibold text-gray-400">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-stone-50">
+                <tr>
+                  <td className="px-4 py-2 font-medium text-gray-900">Buitenwas</td>
+                  <td className="px-4 py-2">20 minuten</td>
+                  <td className="px-4 py-2">1 blok</td>
+                  <td className="px-4 py-2 text-gray-500">Bezet 1 wasplaats van bijv. 09:00 tot 09:20</td>
+                </tr>
+                <tr>
+                  <td className="px-4 py-2 font-medium text-gray-900">Compleet</td>
+                  <td className="px-4 py-2">40 minuten</td>
+                  <td className="px-4 py-2">2 blokken</td>
+                  <td className="px-4 py-2 text-gray-500">Bezet 1 wasplaats van bijv. 09:00 tot 09:40</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div className="space-y-2">
+            <h3 className="font-semibold text-gray-900">Voorbeeld bij 2 wasplaatsen</h3>
+            <ul className="list-disc list-inside space-y-1 text-gray-600 pl-1">
+              <li>Er kunnen <strong>2 buitenwassen tegelijk starten</strong> om 09:00 (één per wasplaats).</li>
+              <li>Als er om 09:00 <strong>1 compleetpakket</strong> geboekt is, is er nog <strong>1 wasplaats</strong> beschikbaar om 09:00.</li>
+              <li>Die compleetreservering houdt de wasplaats bezet tot <strong>09:40</strong> — om 09:20 kan op die wasplaats dus nog niemand anders starten.</li>
+            </ul>
+          </div>
+
+          <div className="space-y-2">
+            <h3 className="font-semibold text-gray-900">Duur aanpassen</h3>
+            <p>
+              Je kunt de duur per pakket aanpassen via <strong>Instellingen → Pakketduur</strong>. Het systeem rondt intern naar boven af op het dichtstbijzijnde blok van 20 minuten.
+            </p>
+            <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-xs text-amber-700">
+              <strong>Let op:</strong> als je bijv. 50 minuten instelt, reserveert het systeem <strong>3 blokken = 60 minuten</strong> capaciteit (naar boven afgerond). Gebruik bij voorkeur veelvouden van 20 minuten (20, 40, 60) om verrassingen te voorkomen.
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <h3 className="font-semibold text-gray-900">Zichtbaar voor bezoekers</h3>
+            <p>
+              De duur wordt getoond op de reserveerpagina bij het kiezen van een pakket, in de bevestigingsmail en in het adminoverzicht. Bezoekers zien bezoekerstaal (&ldquo;ca. 40 minuten&rdquo;) — nooit technische termen.
+            </p>
+          </div>
+
+        </div>
+      </section>
+
       {/* Sectie: Overzicht exports */}
       <section className="bg-white border border-stone-100 rounded-2xl shadow-sm overflow-hidden">
         <div className="px-6 py-4 bg-gray-50 border-b border-stone-100">
