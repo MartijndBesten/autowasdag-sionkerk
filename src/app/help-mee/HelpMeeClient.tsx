@@ -32,6 +32,27 @@ const categories = [
 
 const allOptions = categories.flatMap(c => c.options);
 
+const SUPPLIES_OPTIONS = [
+  { value: "emmer",             label: "Emmer" },
+  { value: "autowasshampoo",    label: "Autowasshampoo" },
+  { value: "wasborstel",        label: "Wasborstel" },
+  { value: "haspel",            label: "Haspel / verlengsnoer" },
+  { value: "zeem",              label: "Zeem" },
+  { value: "doeken_binnenkant", label: "Doeken voor binnenkant auto" },
+  { value: "stofzuiger",        label: "Stofzuiger" },
+  { value: "spons",             label: "Spons" },
+  { value: "droogdoeken",       label: "Droogdoeken" },
+  { value: "tuinslang",         label: "Tuinslang" },
+  { value: "hogedrukreiniger",  label: "Hogedrukreiniger" },
+  { value: "partytent",         label: "Partytent" },
+  { value: "tafel",             label: "Tafel" },
+  { value: "anders",            label: "Anders, namelijk" },
+];
+
+const SUPPLIES_LABELS: Record<string, string> = Object.fromEntries(
+  SUPPLIES_OPTIONS.map(o => [o.value, o.label])
+);
+
 const AVAIL_OPTIONS = [
   { value: "full_day",  label: "Hele dag",  sub: "09:00 – 16:00" },
   { value: "morning",   label: "Ochtend",   sub: "09:00 – 12:30" },
@@ -58,35 +79,55 @@ const labelCls = "block text-xs font-semibold text-green-700 uppercase tracking-
 const reqStar  = <span className="text-red-400 ml-1">*</span>;
 
 export default function HelpMeeClient({ dateFormatted }: { dateFormatted: string }) {
-  const [selected,       setSelected]       = useState<string[]>([]);
-  const [availability,   setAvailability]   = useState("full_day");
-  const [form,           setForm]           = useState({ name: "", email: "", phone: "", notes: "" });
-  const [details,        setDetails]        = useState({ bakken: "", spullen: "", sponsoring: "" });
-  const [costPreference, setCostPreference] = useState("");
-  const [status,         setStatus]         = useState<"idle" | "loading" | "success" | "error">("idle");
-  const [errorMsg,       setErrorMsg]       = useState("");
+  const [selected,          setSelected]          = useState<string[]>([]);
+  const [availability,      setAvailability]      = useState("full_day");
+  const [form,              setForm]              = useState({ name: "", email: "", phone: "", notes: "" });
+  const [details,           setDetails]           = useState({ bakken: "", sponsoring: "" });
+  const [spullenItems,      setSpullenItems]      = useState<string[]>([]);
+  const [spullenAnders,     setSpullenAnders]     = useState("");
+  const [spullenToelichting,setSpullenToelichting]= useState("");
+  const [costPreference,    setCostPreference]    = useState("");
+  const [status,            setStatus]            = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [errorMsg,          setErrorMsg]          = useState("");
 
   function toggle(id: string) {
     setSelected(p => p.includes(id) ? p.filter(r => r !== id) : [...p, id]);
+  }
+  function toggleSpullen(item: string) {
+    setSpullenItems(p => p.includes(item) ? p.filter(x => x !== item) : [...p, item]);
   }
   function set(k: keyof typeof form, v: string) { setForm(p => ({ ...p, [k]: v })); }
   function setDetail(k: keyof typeof details, v: string) { setDetails(p => ({ ...p, [k]: v })); }
 
   function buildContributionDetails(): string | null {
     const parts: string[] = [];
-    if (selected.includes("bakken")     && details.bakken.trim())     parts.push(`Bakken: ${details.bakken.trim()}`);
-    if (selected.includes("spullen")    && details.spullen.trim())    parts.push(`Spullen: ${details.spullen.trim()}`);
+    if (selected.includes("bakken") && details.bakken.trim()) parts.push(`Bakken: ${details.bakken.trim()}`);
+    if (selected.includes("spullen")) {
+      const items = spullenItems.filter(s => s !== "anders");
+      if (items.length > 0) parts.push(`Spullen: ${items.map(s => SUPPLIES_LABELS[s] ?? s).join(", ")}`);
+      if (spullenItems.includes("anders") && spullenAnders.trim()) parts.push(`SpullenAnders: ${spullenAnders.trim()}`);
+      if (spullenToelichting.trim()) parts.push(`SpullenToelichting: ${spullenToelichting.trim()}`);
+    }
     if (selected.includes("sponsoring") && details.sponsoring.trim()) parts.push(`Sponsoring: ${details.sponsoring.trim()}`);
     return parts.length ? parts.join("\n") : null;
   }
 
   function clientValidate(): string | null {
     if (selected.includes("bakken")) {
-      if (!details.bakken.trim())  return "Vul in wat je gaat bakken.";
-      if (!costPreference)         return "Geef aan hoe de kosten van het bakken worden gedekt.";
+      if (!details.bakken.trim()) return "Vul in wat je gaat bakken.";
+      if (!costPreference)        return "Geef aan hoe de kosten van het bakken worden gedekt.";
     }
-    if (selected.includes("spullen")    && !details.spullen.trim())    return "Vul in welke spullen je meeneemt.";
-    if (selected.includes("sponsoring") && !details.sponsoring.trim()) return "Vul in hoe je wilt bijdragen als sponsor/verkoper.";
+    if (selected.includes("spullen")) {
+      const hasItem        = spullenItems.length > 0;
+      const hasAnders      = spullenAnders.trim().length > 0;
+      const hasToelichting = spullenToelichting.trim().length > 0;
+      if (!hasItem && !hasAnders && !hasToelichting)
+        return "Kies minimaal één spullenoptie of vul een toelichting in.";
+      if (spullenItems.includes("anders") && !spullenAnders.trim())
+        return "Vul in wat je nog meer meeneemt bij 'Anders, namelijk'.";
+    }
+    if (selected.includes("sponsoring") && !details.sponsoring.trim())
+      return "Vul in hoe je wilt bijdragen als sponsor/verkoper.";
     return null;
   }
 
@@ -110,6 +151,7 @@ export default function HelpMeeClient({ dateFormatted }: { dateFormatted: string
           contribution_details: buildContributionDetails(),
           cost_preference:      selected.includes("bakken") ? costPreference : null,
           notes:                form.notes || null,
+          selected_supplies:    selected.includes("spullen") ? spullenItems : [],
         }),
       });
       const json = await res.json();
@@ -280,11 +322,39 @@ export default function HelpMeeClient({ dateFormatted }: { dateFormatted: string
             )}
 
             {selected.includes("spullen") && (
-              <div>
-                <label className={labelCls}>Wat neem je mee? {reqStar}</label>
-                <textarea rows={2} value={details.spullen} onChange={e => setDetail("spullen", e.target.value)}
-                  placeholder="bijv. 5 emmers, 10 sponzen en een jerrycan groene zeep"
-                  className={`${fieldCls} resize-none ${!details.spullen.trim() ? "border-rose-200" : ""}`} />
+              <div className="space-y-3">
+                <div>
+                  <label className={labelCls}>Wat kun je meenemen? {reqStar}</label>
+                  <div className="grid grid-cols-2 gap-1.5 mt-1">
+                    {SUPPLIES_OPTIONS.map(opt => {
+                      const checked = spullenItems.includes(opt.value);
+                      return (
+                        <label key={opt.value}
+                          className={`flex items-center gap-2 rounded-xl border px-3 py-2 cursor-pointer text-sm transition-colors select-none ${checked ? "border-yellow-500 bg-yellow-50 text-yellow-900" : "border-stone-200 text-gray-600 hover:border-yellow-300"}`}>
+                          <input type="checkbox" className="sr-only" checked={checked} onChange={() => toggleSpullen(opt.value)} />
+                          <span className={`w-4 h-4 rounded border-2 flex-shrink-0 flex items-center justify-center ${checked ? "border-yellow-500 bg-yellow-500" : "border-stone-300"}`}>
+                            {checked && <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
+                          </span>
+                          {opt.label}
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+                {spullenItems.includes("anders") && (
+                  <div>
+                    <label className={labelCls}>Wat neem je nog meer mee? {reqStar}</label>
+                    <input value={spullenAnders} onChange={e => setSpullenAnders(e.target.value)}
+                      placeholder="Omschrijf wat je meeneemt"
+                      className={`${fieldCls} ${!spullenAnders.trim() ? "border-rose-200" : ""}`} />
+                  </div>
+                )}
+                <div>
+                  <label className={labelCls}>Aantal / toelichting <span className="text-gray-300 font-normal normal-case tracking-normal">(optioneel)</span></label>
+                  <input value={spullenToelichting} onChange={e => setSpullenToelichting(e.target.value)}
+                    placeholder="bijv. 2 emmers en een haspel van 25 meter"
+                    className={fieldCls} />
+                </div>
               </div>
             )}
 

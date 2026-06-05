@@ -320,9 +320,14 @@ export async function sendAssignmentEmail(data: {
       rows.push(["Kosten ingrediënten", COST_LABELS[data.cost_preference] ?? data.cost_preference]);
     }
   }
-  if (spullenDetail) {
+  const spullenAnders      = data.contribution_details?.split("\n").find(l => l.startsWith("SpullenAnders:"))?.replace("SpullenAnders:", "").trim() ?? null;
+  const spullenToelichting = data.contribution_details?.split("\n").find(l => l.startsWith("SpullenToelichting:"))?.replace("SpullenToelichting:", "").trim() ?? null;
+
+  if (spullenDetail || spullenAnders || spullenToelichting) {
     rows.push(["", "We hebben genoteerd dat je de volgende spullen meeneemt:"]);
-    rows.push(["Spullen", spullenDetail]);
+    if (spullenDetail)      rows.push(["Spullen",     spullenDetail]);
+    if (spullenAnders)      rows.push(["Anders",      spullenAnders]);
+    if (spullenToelichting) rows.push(["Toelichting", spullenToelichting]);
   }
   if (sponsorDetail) {
     rows.push(["", "We hebben dit voorstel of aanbod genoteerd:"]);

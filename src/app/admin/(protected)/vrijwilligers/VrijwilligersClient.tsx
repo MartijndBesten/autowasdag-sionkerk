@@ -92,6 +92,23 @@ const COST_LABELS: Record<string, string> = {
   weet_ik_nog_niet:   "Weet ik nog niet",
 };
 
+const SUPPLIES_LABELS: Record<string, string> = {
+  emmer:             "Emmer",
+  autowasshampoo:    "Autowasshampoo",
+  wasborstel:        "Wasborstel",
+  haspel:            "Haspel / verlengsnoer",
+  zeem:              "Zeem",
+  doeken_binnenkant: "Doeken voor binnenkant auto",
+  stofzuiger:        "Stofzuiger",
+  spons:             "Spons",
+  droogdoeken:       "Droogdoeken",
+  tuinslang:         "Tuinslang",
+  hogedrukreiniger:  "Hogedrukreiniger",
+  partytent:         "Partytent",
+  tafel:             "Tafel",
+  anders:            "Anders",
+};
+
 function parseContrib(details: string | null, key: string): string | null {
   if (!details) return null;
   const line = details.split("\n").find(l => l.toLowerCase().startsWith(key.toLowerCase() + ":"));
@@ -630,8 +647,11 @@ export default function VrijwilligersClient({ initialRows }: { initialRows: Volu
               </thead>
               <tbody className="divide-y divide-stone-50">
                 {spullenRows.map(r => {
-                  const spul  = parseContrib(r.contribution_details, "Spullen");
-                  const spons = parseContrib(r.contribution_details, "Sponsoring");
+                  const spul           = parseContrib(r.contribution_details, "Spullen");
+                  const spulAnders     = parseContrib(r.contribution_details, "SpullenAnders");
+                  const spulToelichting= parseContrib(r.contribution_details, "SpullenToelichting");
+                  const spons          = parseContrib(r.contribution_details, "Sponsoring");
+                  const hasSupplies    = spul || spulAnders || spulToelichting || (r.selected_supplies?.length > 0);
                   const types = r.selected_tasks?.filter(t => ["spullen","sponsoring"].includes(t)).map(t => TASK_LABELS[t]?.replace(/^[^ ]+ /, "") ?? t).join(", ") || "—";
                   return (
                     <tr key={r.id} className="hover:bg-gray-50">
@@ -642,9 +662,24 @@ export default function VrijwilligersClient({ initialRows }: { initialRows: Volu
                       <td className="px-4 py-3 text-xs text-gray-500">{r.phone ?? "—"}</td>
                       <td className="px-4 py-3 text-xs text-gray-600">{types}</td>
                       <td className="px-4 py-3 text-xs text-gray-600 max-w-xs">
-                        {spul  && <p>📦 {spul}</p>}
+                        {hasSupplies && (
+                          <div className="space-y-0.5">
+                            {r.selected_supplies?.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mb-1">
+                                {r.selected_supplies.map(s => (
+                                  <span key={s} className="inline-block bg-yellow-50 border border-yellow-200 text-yellow-800 text-xs px-1.5 py-0.5 rounded">
+                                    {SUPPLIES_LABELS[s] ?? s}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                            {spul && !r.selected_supplies?.length && <p>📦 {spul}</p>}
+                            {spulAnders     && <p>➕ {spulAnders}</p>}
+                            {spulToelichting && <p className="text-gray-400 italic">{spulToelichting}</p>}
+                          </div>
+                        )}
                         {spons && <p>🤝 {spons}</p>}
-                        {!spul && !spons && <span className="text-gray-300">—</span>}
+                        {!hasSupplies && !spons && <span className="text-gray-300">—</span>}
                       </td>
                       <td className="px-4 py-3">
                         <span className={`inline-block text-xs font-semibold px-2 py-0.5 rounded-full ${STATUS_BADGE[r.planning_status ?? "new"] ?? ""}`}>

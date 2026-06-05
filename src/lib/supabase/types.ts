@@ -57,6 +57,7 @@ export interface VolunteerSignup {
   assignment_email_sent: boolean;
   assignment_email_sent_at: string | null;
   is_deleted: boolean;
+  selected_supplies: string[];
 }
 
 export interface ContributionSignup {

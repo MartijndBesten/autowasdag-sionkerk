@@ -10,7 +10,7 @@ const VALID_COST = ["eigen_kosten", "vergoeding_gewenst", "gesponsord", "weet_ik
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { name, email, phone, availability, tasks, contribution_details, cost_preference, notes } = body;
+    const { name, email, phone, availability, tasks, contribution_details, cost_preference, notes, selected_supplies } = body;
 
     if (!name || !email) {
       return NextResponse.json({ error: "Naam en e-mail zijn verplicht." }, { status: 400 });
@@ -30,9 +30,14 @@ export async function POST(req: NextRequest) {
       }
     }
     if (taskList.includes("spullen")) {
-      const spullenLine = details.split("\n").find(l => l.startsWith("Spullen:"));
-      if (!spullenLine || spullenLine.replace("Spullen:", "").trim().length === 0) {
-        return NextResponse.json({ error: "Geef aan welke spullen je meeneemt." }, { status: 400 });
+      const supplies: string[] = Array.isArray(selected_supplies) ? selected_supplies : [];
+      const andersText      = details.split("\n").find(l => l.startsWith("SpullenAnders:"))?.replace("SpullenAnders:", "").trim() ?? "";
+      const toelichtingText = details.split("\n").find(l => l.startsWith("SpullenToelichting:"))?.replace("SpullenToelichting:", "").trim() ?? "";
+      if (supplies.length === 0 && !andersText && !toelichtingText) {
+        return NextResponse.json({ error: "Kies minimaal één spullenoptie of vul een toelichting in." }, { status: 400 });
+      }
+      if (supplies.includes("anders") && !andersText) {
+        return NextResponse.json({ error: "Vul in wat je nog meer meeneemt bij 'Anders, namelijk'." }, { status: 400 });
       }
     }
     if (taskList.includes("sponsoring")) {
@@ -58,6 +63,7 @@ export async function POST(req: NextRequest) {
         notes:                notes || null,
         status:               "confirmed",
         planning_status:      "new",
+        selected_supplies:    taskList.includes("spullen") ? (Array.isArray(selected_supplies) ? selected_supplies : []) : [],
       })
       .select("id")
       .single();
