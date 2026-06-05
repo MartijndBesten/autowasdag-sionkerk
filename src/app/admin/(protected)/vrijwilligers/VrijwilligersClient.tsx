@@ -351,6 +351,91 @@ export default function VrijwilligersClient({ initialRows, suppliesOptions }: { 
   const [deleteSuccess, setDeleteSuccess] = useState<string | null>(null);
   const [copiedKey,     setCopiedKey]     = useState<string | null>(null);
 
+  // ── Bewerken (persoonlijke gegevens) ─────────────────────────────────────────
+  const [bewerkenRow,     setBewerkenRow]     = useState<VolunteerSignup | null>(null);
+  const [bewerkenForm,    setBewerkenForm]    = useState({
+    full_name: "", email: "", phone: "", availability: "full_day",
+    notes: "", contribution_details: "", cost_preference: "",
+  });
+  const [bewerkenTasks,   setBewerkenTasks]   = useState<string[]>([]);
+  const [bewerkenSupplies,setBewerkenSupplies]= useState<string[]>([]);
+  const [bewerkenBusy,    setBewerkenBusy]    = useState(false);
+  const [bewerkenErr,     setBewerkenErr]     = useState<string | null>(null);
+  const [bewerkenMailSent,setBewerkenMailSent]= useState(false);
+  const [bewerkenMailBusy,setBewerkenMailBusy]= useState(false);
+
+  function openBewerken(v: VolunteerSignup) {
+    setBewerkenRow(v);
+    setBewerkenForm({
+      full_name:            v.full_name,
+      email:                v.email,
+      phone:                v.phone ?? "",
+      availability:         v.availability,
+      notes:                v.notes ?? "",
+      contribution_details: v.contribution_details ?? "",
+      cost_preference:      v.cost_preference ?? "",
+    });
+    setBewerkenTasks(v.selected_tasks ?? []);
+    setBewerkenSupplies(v.selected_supplies ?? []);
+    setBewerkenErr(null);
+    setBewerkenMailSent(false);
+  }
+
+  function toggleBewerkenTask(t: string) {
+    setBewerkenTasks(p => p.includes(t) ? p.filter(x => x !== t) : [...p, t]);
+  }
+  function toggleBewerkenSupply(s: string) {
+    setBewerkenSupplies(p => p.includes(s) ? p.filter(x => x !== s) : [...p, s]);
+  }
+
+  async function saveBewerken() {
+    if (!bewerkenRow) return;
+    if (!bewerkenForm.full_name.trim()) { setBewerkenErr("Naam is verplicht."); return; }
+    setBewerkenBusy(true);
+    setBewerkenErr(null);
+    try {
+      const res = await fetch(`/api/vrijwilligers/${bewerkenRow.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...bewerkenForm,
+          selected_tasks:    bewerkenTasks,
+          selected_supplies: bewerkenSupplies,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "Fout");
+      const updated: VolunteerSignup = {
+        ...bewerkenRow,
+        full_name:            bewerkenForm.full_name.trim(),
+        email:                bewerkenForm.email.trim().toLowerCase(),
+        phone:                bewerkenForm.phone.trim() || null,
+        availability:         bewerkenForm.availability as "full_day"|"morning"|"afternoon",
+        notes:                bewerkenForm.notes.trim() || null,
+        contribution_details: bewerkenForm.contribution_details.trim() || null,
+        cost_preference:      bewerkenForm.cost_preference || null,
+        selected_tasks:       bewerkenTasks,
+        selected_supplies:    bewerkenSupplies,
+      };
+      setRows(rows.map(r => r.id === bewerkenRow.id ? updated : r));
+      setBewerkenRow(updated);
+    } catch (e) {
+      setBewerkenErr(e instanceof Error ? e.message : "Opslaan mislukt.");
+    }
+    setBewerkenBusy(false);
+  }
+
+  async function sendBewerkenMail() {
+    if (!bewerkenRow) return;
+    setBewerkenMailBusy(true);
+    try {
+      const res = await fetch(`/api/vrijwilligers/${bewerkenRow.id}`, { method: "POST" });
+      if (!res.ok) throw new Error();
+      setBewerkenMailSent(true);
+    } catch { setBewerkenErr("E-mail versturen mislukt."); }
+    setBewerkenMailBusy(false);
+  }
+
   // Filters
   const [fStatus,        setFStatus]        = useState("");
   const [fTask,          setFTask]          = useState("");
@@ -726,7 +811,11 @@ export default function VrijwilligersClient({ initialRows, suppliesOptions }: { 
                               ? "Indelen"
                               : r.planning_status === "cancelled" || r.planning_status === "not_needed"
                                 ? "Bekijken"
-                                : "Wijzigen"}
+                                : "Indeling"}
+                          </button>
+                          <button onClick={() => openBewerken(r)}
+                            className="text-xs bg-stone-50 text-gray-700 border border-stone-200 px-3 py-1.5 rounded-lg hover:bg-stone-100 transition-colors">
+                            Bewerken
                           </button>
                           <button
                             onClick={() => setDeleteConfirm(r)}
@@ -1096,6 +1185,161 @@ export default function VrijwilligersClient({ initialRows, suppliesOptions }: { 
                 ⚠ Er zijn nog vrijwilligers zonder definitief dagdeel — die verschijnen in het afdrukvenster onder &ldquo;Nog niet ingepland&rdquo;.
               </p>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal: Bewerken vrijwilliger ────────────────────────────────────────── */}
+      {bewerkenRow && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          onClick={e => { if (e.target === e.currentTarget && !bewerkenBusy) setBewerkenRow(null); }}>
+          <div className="absolute inset-0 bg-black/40" />
+          <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+
+            <div className="sticky top-0 bg-white border-b border-stone-100 px-6 py-4 flex items-center justify-between rounded-t-3xl">
+              <div>
+                <h2 className="font-bold text-gray-900 text-lg">{bewerkenRow.full_name} — gegevens bewerken</h2>
+                <p className="text-xs text-gray-400">{bewerkenRow.email}{bewerkenRow.phone ? ` · ${bewerkenRow.phone}` : ""}</p>
+              </div>
+              <button onClick={() => setBewerkenRow(null)} className="text-gray-400 hover:text-gray-700 text-xl">✕</button>
+            </div>
+
+            <div className="p-6 space-y-5">
+              {/* Persoonsgegevens */}
+              <div className="space-y-3">
+                <p className="text-xs font-semibold text-green-700 uppercase tracking-wider">Persoonsgegevens</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="col-span-2">
+                    <label className={lbl}>Naam *</label>
+                    <input type="text" value={bewerkenForm.full_name}
+                      onChange={e => setBewerkenForm(p => ({...p, full_name: e.target.value}))}
+                      className={fc} />
+                  </div>
+                  <div>
+                    <label className={lbl}>E-mailadres *</label>
+                    <input type="email" value={bewerkenForm.email}
+                      onChange={e => setBewerkenForm(p => ({...p, email: e.target.value}))}
+                      className={fc} />
+                  </div>
+                  <div>
+                    <label className={lbl}>Telefoon</label>
+                    <input type="tel" value={bewerkenForm.phone}
+                      onChange={e => setBewerkenForm(p => ({...p, phone: e.target.value}))}
+                      className={fc} />
+                  </div>
+                  <div className="col-span-2">
+                    <label className={lbl}>Beschikbaarheid</label>
+                    <select value={bewerkenForm.availability}
+                      onChange={e => setBewerkenForm(p => ({...p, availability: e.target.value}))}
+                      className={fc}>
+                      <option value="full_day">Hele dag (09:00 – 16:00)</option>
+                      <option value="morning">Ochtend (09:00 – 12:30)</option>
+                      <option value="afternoon">Middag (12:30 – 16:00)</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Gewenste taken */}
+              <div className="space-y-2">
+                <p className="text-xs font-semibold text-green-700 uppercase tracking-wider">Gewenste taken</p>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {Object.entries(TASK_LABELS_PLAIN).map(([key, label]) => (
+                    <label key={key} className={`flex items-center gap-2 rounded-xl border px-3 py-2 cursor-pointer text-sm transition-colors ${bewerkenTasks.includes(key) ? "border-green-600 bg-green-50 text-green-800" : "border-stone-200 text-gray-600 hover:border-green-300"}`}>
+                      <input type="checkbox" className="sr-only" checked={bewerkenTasks.includes(key)} onChange={() => toggleBewerkenTask(key)} />
+                      <span className={`w-4 h-4 rounded border-2 flex-shrink-0 flex items-center justify-center ${bewerkenTasks.includes(key) ? "border-green-600 bg-green-600" : "border-stone-300"}`}>
+                        {bewerkenTasks.includes(key) && <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
+                      </span>
+                      {label}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Mee te nemen spullen */}
+              {bewerkenTasks.includes("spullen") && SUPPLIES_LABELS && (
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold text-green-700 uppercase tracking-wider">Mee te nemen spullen</p>
+                  <div className="flex flex-wrap gap-2">
+                    {suppliesOptions.map(s => (
+                      <label key={s.value} className={`inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border cursor-pointer transition-colors ${bewerkenSupplies.includes(s.value) ? "border-green-600 bg-green-50 text-green-800" : "border-stone-200 text-gray-600 hover:border-green-300"}`}>
+                        <input type="checkbox" className="sr-only" checked={bewerkenSupplies.includes(s.value)} onChange={() => toggleBewerkenSupply(s.value)} />
+                        {s.label}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Bijdragedetails */}
+              <div className="space-y-2">
+                <p className="text-xs font-semibold text-green-700 uppercase tracking-wider">Bijdragedetails</p>
+                <textarea rows={3} value={bewerkenForm.contribution_details}
+                  onChange={e => setBewerkenForm(p => ({...p, contribution_details: e.target.value}))}
+                  placeholder={"Bakken: 12 cupcakes\nSpullen: emmer, zeep\nSponsoring: verkoop snacks"}
+                  className={`${fc} resize-none font-mono text-xs`} />
+                <p className="text-xs text-gray-400">Formaat: Bakken: omschrijving · Spullen: items · Sponsoring: omschrijving</p>
+              </div>
+
+              {/* Kosten/sponsoring */}
+              <div className="space-y-2">
+                <p className="text-xs font-semibold text-green-700 uppercase tracking-wider">Kosten / gesponsord</p>
+                <select value={bewerkenForm.cost_preference}
+                  onChange={e => setBewerkenForm(p => ({...p, cost_preference: e.target.value}))}
+                  className={fc}>
+                  <option value="">— Niet van toepassing —</option>
+                  <option value="eigen_kosten">Eigen kosten</option>
+                  <option value="vergoeding_gewenst">Vergoeding gewenst</option>
+                  <option value="gesponsord">Gesponsord</option>
+                  <option value="weet_ik_nog_niet">Weet ik nog niet</option>
+                </select>
+              </div>
+
+              {/* Opmerking vrijwilliger */}
+              <div>
+                <label className={lbl}>Opmerking vrijwilliger</label>
+                <textarea rows={2} value={bewerkenForm.notes}
+                  onChange={e => setBewerkenForm(p => ({...p, notes: e.target.value}))}
+                  className={`${fc} resize-none`} />
+              </div>
+
+              {bewerkenErr && <p className="text-red-500 text-sm bg-red-50 border border-red-200 rounded-xl px-4 py-2">{bewerkenErr}</p>}
+
+              <div className="flex gap-3">
+                <button onClick={saveBewerken} disabled={bewerkenBusy}
+                  className="flex-1 bg-green-800 text-white font-semibold rounded-full py-3 hover:bg-green-900 transition-colors disabled:opacity-50">
+                  {bewerkenBusy ? "Opslaan…" : "Wijzigingen opslaan"}
+                </button>
+                <button onClick={() => setBewerkenRow(null)} disabled={bewerkenBusy}
+                  className="px-5 border border-stone-200 rounded-full text-gray-600 hover:bg-stone-50 text-sm">
+                  Annuleren
+                </button>
+              </div>
+
+              {/* Bevestigingsmail */}
+              <div className="border-t border-stone-100 pt-4 space-y-2">
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Bevestigingsmail</p>
+                {bewerkenMailSent
+                  ? <p className="text-green-600 text-sm font-medium">✓ Bevestigingsmail verstuurd naar {bewerkenRow.email}</p>
+                  : <button onClick={sendBewerkenMail} disabled={bewerkenMailBusy}
+                      className="w-full border border-green-300 text-green-700 text-sm font-medium rounded-xl py-2.5 hover:bg-green-50 transition-colors disabled:opacity-50">
+                      {bewerkenMailBusy ? "Versturen…" : "✉ Bevestigingsmail opnieuw versturen"}
+                    </button>
+                }
+              </div>
+
+              {/* Wijzigingslog */}
+              {bewerkenRow.admin_notes && (
+                <div className="border-t border-stone-100 pt-4 space-y-2">
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Wijzigingslog</p>
+                  <div className="bg-stone-50 rounded-xl p-3 space-y-1 max-h-40 overflow-y-auto">
+                    {bewerkenRow.admin_notes.split("\n").filter(Boolean).map((line, i) => (
+                      <p key={i} className="text-xs text-gray-500 font-mono leading-relaxed">{line}</p>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

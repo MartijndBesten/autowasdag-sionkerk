@@ -11,6 +11,126 @@ function addMins(time: string, minutes: number): string {
   return `${Math.floor(total / 60).toString().padStart(2, "0")}:${(total % 60).toString().padStart(2, "0")}`;
 }
 
+// Eenvoudige e-mailvalidatie
+function validEmail(e: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.trim());
+}
+
+// Formateer een wijzigingslogregel met Nederlandse timestamp
+function logTs(): string {
+  const now = new Date();
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${pad(now.getDate())}-${pad(now.getMonth()+1)}-${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+}
+
+function appendLog(existing: string | null, entry: string): string {
+  return existing ? `${existing}\n${entry}` : entry;
+}
+
+// ── PUT: bewerk reserveringsgegevens ─────────────────────────────────────────
+export async function PUT(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+
+    const session = await createClient();
+    const { data: { user } } = await session.auth.getUser();
+    if (!user) return NextResponse.json({ error: "Niet ingelogd." }, { status: 401 });
+
+    const body = await req.json();
+    const {
+      full_name, email, phone, notes,
+      package_type, reservation_date,
+      status, payment_status,
+    } = body;
+
+    if (!full_name?.trim()) {
+      return NextResponse.json({ error: "Naam is verplicht." }, { status: 400 });
+    }
+    if (email && !validEmail(email)) {
+      return NextResponse.json({ error: "Ongeldig e-mailadres." }, { status: 400 });
+    }
+
+    const supabase = createAdminClient() as any;
+
+    // Huidige record ophalen voor wijzigingslog
+    const { data: current } = await supabase
+      .from("car_reservations")
+      .select("full_name, email, phone, notes, package_type, reservation_date, status, payment_status, admin_notes")
+      .eq("id", id).single();
+
+    // Diff berekenen en wijzigingslog bouwen
+    const FIELD_LABELS: Record<string, string> = {
+      full_name: "Naam", email: "E-mailadres", phone: "Telefoon",
+      notes: "Notities", package_type: "Pakket",
+      reservation_date: "Datum", status: "Status", payment_status: "Betaalstatus",
+    };
+    const PACKAGE_LBL: Record<string, string> = { buiten_wassen: "Buiten wassen", compleet: "Compleet" };
+    const STATUS_LBL: Record<string, string>  = { pending:"In behandeling", confirmed:"Bevestigd", completed:"Afgerond", cancelled:"Geannuleerd" };
+    const PAY_LBL: Record<string, string>     = { unpaid:"Nog te betalen", paid_cash:"Betaald contant", paid_qr:"Betaald via QR", donated_extra:"Extra donatie" };
+
+    const incoming: Record<string, string | null | undefined> = {
+      full_name, email: email?.trim().toLowerCase(), phone: phone?.trim() || null,
+      notes: notes?.trim() || null, package_type, reservation_date,
+      status, payment_status,
+    };
+
+    const ts = logTs();
+    const logLines: string[] = [];
+    for (const [key, newVal] of Object.entries(incoming)) {
+      if (newVal === undefined) continue;
+      const oldVal = current?.[key] ?? null;
+      const normalNew = newVal ?? "";
+      const normalOld = oldVal ?? "";
+      if (normalNew !== normalOld) {
+        const label = FIELD_LABELS[key] ?? key;
+        const fmt = (v: string) => {
+          if (key === "package_type") return PACKAGE_LBL[v] ?? v;
+          if (key === "status") return STATUS_LBL[v] ?? v;
+          if (key === "payment_status") return PAY_LBL[v] ?? v;
+          return v || "—";
+        };
+        logLines.push(`${ts}  ${label}: ${fmt(normalOld)} → ${fmt(normalNew)}`);
+      }
+    }
+
+    const newAdminNotes = logLines.length > 0
+      ? appendLog(current?.admin_notes, logLines.join("\n"))
+      : (current?.admin_notes ?? null);
+
+    // Pakketduur ophalen als pakket wijzigt
+    let pkgDuration: number | undefined;
+    if (package_type && package_type !== current?.package_type) {
+      const { data: evRow } = await supabase.from("settings").select("value").eq("key","event").single();
+      const ev = (evRow?.value as Record<string,unknown>) ?? {};
+      pkgDuration = package_type === "compleet"
+        ? ((ev.duration_compleet as number) ?? 40)
+        : ((ev.duration_buiten_wassen as number) ?? 20);
+    }
+
+    const updates: Record<string, unknown> = { updated_at: new Date().toISOString(), admin_notes: newAdminNotes };
+    if (full_name)          updates.full_name         = full_name.trim();
+    if (email)              updates.email             = email.trim().toLowerCase();
+    if (phone !== undefined)updates.phone             = phone?.trim() || null;
+    if (notes !== undefined)updates.notes             = notes?.trim() || null;
+    if (package_type)       updates.package_type      = package_type;
+    if (pkgDuration)        updates.package_duration  = pkgDuration;
+    if (reservation_date)   updates.reservation_date  = reservation_date;
+    if (status)             updates.status            = status;
+    if (payment_status)     updates.payment_status    = payment_status;
+
+    const { error: updateErr } = await supabase.from("car_reservations").update(updates).eq("id", id);
+    if (updateErr) throw updateErr;
+
+    return NextResponse.json({ ok: true, log_entries: logLines.length });
+  } catch (err) {
+    console.error("[api/reserveren/[id] PUT]", err);
+    return NextResponse.json({ error: "Opslaan mislukt." }, { status: 500 });
+  }
+}
+
 // ── PATCH: verplaats reservering naar nieuw tijdslot ─────────────────────────
 export async function PATCH(
   req: NextRequest,
