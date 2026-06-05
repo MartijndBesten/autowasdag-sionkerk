@@ -127,7 +127,19 @@ export default function ReserveringenClient({ initialData }: { initialData: CarR
   const [data, setData]         = useState<CarReservation[]>(initialData);
   const [search, setSearch]     = useState("");
   const [filterStatus, setFS]   = useState<string>("all");
-  const [deleteConfirm, setDC]  = useState<CarReservation | null>(null);
+  const [deleteConfirm, setDC]      = useState<CarReservation | null>(null);
+
+  // ── Verplaatsen ──────────────────────────────────────────────────────────────
+  const [moveRow,     setMoveRow]   = useState<CarReservation | null>(null);
+  const [moveSlots,   setMoveSlots] = useState<{ time: string; availableBays: number; available: boolean }[]>([]);
+  const [washBays,    setWashBays]  = useState(2);
+  const [moveTarget,  setMoveTarget]= useState<string>("");
+  const [moveBusy,    setMoveBusy]  = useState(false);
+  const [moveErr,     setMoveErr]   = useState<string | null>(null);
+  const [movedRow,    setMovedRow]  = useState<CarReservation | null>(null);
+  const [mailBusy,    setMailBusy]  = useState(false);
+  const [mailSent,    setMailSent]  = useState(false);
+
   const supabase = createClient();
 
   const filtered = useMemo(() => data.filter(r => {
@@ -154,6 +166,58 @@ export default function ReserveringenClient({ initialData }: { initialData: CarR
   async function updatePayment(id: string, payment_status: PaymentStatus) {
     await (supabase as any).from("car_reservations").update({ payment_status }).eq("id", id);
     setData(prev => prev.map(r => r.id === id ? { ...r, payment_status } : r));
+  }
+
+  async function openMove(r: CarReservation) {
+    setMoveRow(r);
+    setMoveTarget("");
+    setMoveErr(null);
+    setMovedRow(null);
+    setMailSent(false);
+    try {
+      const res = await fetch(
+        `/api/timeslots?date=${r.reservation_date}&package=${r.package_type}&exclude_id=${r.id}`
+      );
+      const json = await res.json();
+      setMoveSlots(json.slots ?? []);
+      setWashBays(json.wash_bays ?? 2);
+    } catch {
+      setMoveSlots([]);
+    }
+  }
+
+  async function confirmMove() {
+    if (!moveRow || !moveTarget) return;
+    setMoveBusy(true);
+    setMoveErr(null);
+    try {
+      const res = await fetch(`/api/reserveren/${moveRow.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ new_time: moveTarget }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? "Fout");
+      const updated = { ...moveRow, reservation_time: moveTarget };
+      setData(prev => prev.map(r => r.id === moveRow.id ? updated : r));
+      setMovedRow(updated);
+    } catch (e) {
+      setMoveErr(e instanceof Error ? e.message : "Verplaatsen mislukt.");
+    }
+    setMoveBusy(false);
+  }
+
+  async function sendConfirmation() {
+    if (!movedRow) return;
+    setMailBusy(true);
+    try {
+      const res = await fetch(`/api/reserveren/${movedRow.id}`, { method: "POST" });
+      if (!res.ok) throw new Error();
+      setMailSent(true);
+    } catch {
+      setMoveErr("E-mail versturen mislukt.");
+    }
+    setMailBusy(false);
   }
 
   async function softDelete(r: CarReservation) {
@@ -259,10 +323,19 @@ export default function ReserveringenClient({ initialData }: { initialData: CarR
                     </select>
                   </td>
                   <td className="px-4 py-3">
-                    <button onClick={() => setDC(r)}
-                      className="text-red-400 hover:text-red-600 text-xs transition-colors">
-                      Verwijder
-                    </button>
+                    <div className="flex gap-2 whitespace-nowrap">
+                      <button
+                        onClick={() => openMove(r)}
+                        disabled={r.status === "cancelled"}
+                        className="text-xs bg-blue-50 text-blue-700 border border-blue-200 px-2.5 py-1.5 rounded-lg hover:bg-blue-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        Verplaatsen
+                      </button>
+                      <button onClick={() => setDC(r)}
+                        className="text-red-400 hover:text-red-600 text-xs transition-colors">
+                        Verwijder
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -297,6 +370,137 @@ export default function ReserveringenClient({ initialData }: { initialData: CarR
                 Annuleren
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal: Verplaatsen ─────────────────────────────────────────────────── */}
+      {moveRow && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          onClick={e => { if (e.target === e.currentTarget && !moveBusy) { setMoveRow(null); } }}>
+          <div className="absolute inset-0 bg-black/40" />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 space-y-5 max-h-[90vh] overflow-y-auto">
+
+            {!movedRow ? (
+              <>
+                <div>
+                  <h2 className="font-bold text-gray-900 text-lg">Reservering verplaatsen</h2>
+                  <p className="text-sm text-gray-500 mt-1">
+                    <strong>{moveRow.full_name}</strong> · {PACKAGE_LABELS[moveRow.package_type] ?? moveRow.package_type} · {fmtDateShort(moveRow.reservation_date)}
+                  </p>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    Huidig tijdslot: <strong>{String(moveRow.reservation_time).slice(0,5)}</strong>
+                    {moveRow.package_duration ? ` (${moveRow.package_duration} min)` : ""}
+                  </p>
+                </div>
+
+                {moveSlots.length === 0 ? (
+                  <p className="text-sm text-gray-400 italic">Geen beschikbare tijdsloten gevonden.</p>
+                ) : (
+                  <div className="space-y-2">
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Kies een nieuw tijdslot</p>
+                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                      {moveSlots.map(slot => {
+                        const isCurrent = String(moveRow.reservation_time).slice(0,5) === slot.time;
+                        const almostFull = slot.availableBays === 1 && washBays > 1;
+                        return (
+                          <button
+                            key={slot.time}
+                            type="button"
+                            onClick={() => setMoveTarget(slot.time)}
+                            disabled={isCurrent}
+                            className={`relative rounded-xl border-2 py-2.5 px-2 text-center text-sm font-medium transition-colors
+                              ${isCurrent
+                                ? "border-stone-200 bg-stone-50 text-stone-400 cursor-not-allowed"
+                                : moveTarget === slot.time
+                                  ? "border-blue-600 bg-blue-50 text-blue-800"
+                                  : almostFull
+                                    ? "border-amber-300 bg-amber-50 text-amber-800 hover:border-amber-500"
+                                    : "border-stone-200 text-gray-700 hover:border-blue-400"
+                              }`}
+                          >
+                            {slot.time}
+                            {isCurrent && <span className="block text-xs text-stone-400 font-normal">huidig</span>}
+                            {!isCurrent && almostFull && <span className="block text-xs text-amber-600 font-normal">bijna vol</span>}
+                            {!isCurrent && !almostFull && <span className="block text-xs text-gray-400 font-normal">{slot.availableBays} vrij</span>}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {moveErr && (
+                  <p className="text-red-500 text-sm bg-red-50 border border-red-200 rounded-xl px-3 py-2">{moveErr}</p>
+                )}
+
+                <div className="flex gap-3 pt-1">
+                  <button
+                    onClick={confirmMove}
+                    disabled={!moveTarget || moveBusy}
+                    className="flex-1 bg-blue-700 text-white font-semibold rounded-full py-2.5 hover:bg-blue-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    {moveBusy ? "Bezig…" : "Bevestig verplaatsing"}
+                  </button>
+                  <button
+                    onClick={() => setMoveRow(null)}
+                    disabled={moveBusy}
+                    className="px-5 border border-stone-200 rounded-full text-gray-600 hover:bg-stone-50 text-sm"
+                  >
+                    Annuleren
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="text-center space-y-2 py-2">
+                  <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mx-auto">
+                    <svg className="w-6 h-6 text-green-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <h2 className="font-bold text-gray-900 text-lg">Verplaatst!</h2>
+                  <p className="text-sm text-gray-600">
+                    {movedRow.full_name} is verplaatst naar <strong>{String(movedRow.reservation_time).slice(0,5)}</strong> uur.
+                  </p>
+                </div>
+
+                <div className="bg-stone-50 border border-stone-200 rounded-xl px-4 py-3 space-y-1 text-sm">
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Bijgewerkte reservering</p>
+                  <p><span className="text-gray-500 w-24 inline-block">Naam</span> {movedRow.full_name}</p>
+                  <p><span className="text-gray-500 w-24 inline-block">Pakket</span> {PACKAGE_LABELS[movedRow.package_type] ?? movedRow.package_type}</p>
+                  <p><span className="text-gray-500 w-24 inline-block">Datum</span> {fmtDateShort(movedRow.reservation_date)}</p>
+                  <p><span className="text-gray-500 w-24 inline-block">Nieuw slot</span> <strong>{String(movedRow.reservation_time).slice(0,5)}</strong> uur</p>
+                </div>
+
+                <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-xs text-amber-700">
+                  Er is <strong>geen automatische e-mail</strong> verstuurd. Klik hieronder om de klant een bijgewerkte bevestiging te sturen.
+                </div>
+
+                {moveErr && (
+                  <p className="text-red-500 text-sm bg-red-50 border border-red-200 rounded-xl px-3 py-2">{moveErr}</p>
+                )}
+
+                {mailSent ? (
+                  <p className="text-green-600 text-sm font-medium text-center">✓ Bevestigingsmail verstuurd naar {movedRow.email}</p>
+                ) : (
+                  <button
+                    onClick={sendConfirmation}
+                    disabled={mailBusy}
+                    className="w-full bg-green-700 text-white font-semibold rounded-full py-3 hover:bg-green-800 transition-colors disabled:opacity-50"
+                  >
+                    {mailBusy ? "Versturen…" : "✉ Nieuwe bevestiging versturen"}
+                  </button>
+                )}
+
+                <button
+                  onClick={() => setMoveRow(null)}
+                  className="w-full border border-stone-200 rounded-full py-2.5 text-gray-600 hover:bg-stone-50 text-sm"
+                >
+                  Sluiten
+                </button>
+              </>
+            )}
           </div>
         </div>
       )}

@@ -6,8 +6,9 @@ import type { AvailableSlot } from "@/lib/timeslots";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;
-  const date = searchParams.get("date");
-  const pkg  = searchParams.get("package") as PackageType | null;
+  const date       = searchParams.get("date");
+  const pkg        = searchParams.get("package") as PackageType | null;
+  const excludeId  = searchParams.get("exclude_id") ?? null; // reservering die wordt verplaatst
 
   if (!date || !pkg) {
     return NextResponse.json({ error: "date en package zijn verplicht." }, { status: 400 });
@@ -38,11 +39,14 @@ export async function GET(req: NextRequest) {
     const allSlots = generateSlots(startTime, endTime, slotDur);
 
     // Tel bezette slots — confirmed, pending en completed tellen als bezet
-    const { data: bookings } = await supabase
+    // Als exclude_id is meegegeven (bij verplaatsen), tel die reservering niet mee
+    let bookingQuery = supabase
       .from("car_reservations")
       .select("reservation_time, package_type, package_duration")
       .eq("reservation_date", date)
       .neq("status", "cancelled");
+    if (excludeId) bookingQuery = bookingQuery.neq("id", excludeId);
+    const { data: bookings } = await bookingQuery;
 
     // countMap: slot → aantal auto's dat op dat tijdstip begint
     // spillMap: slot → hoeveel tijdblokken extra bezet zijn door multi-slot pakketten
@@ -82,6 +86,7 @@ export async function GET(req: NextRequest) {
       slots: filtered,
       package_duration: pkgDuration,
       slots_needed:     slotsNeeded,
+      wash_bays:        washBays,
       slot_duration:    slotDur,
     });
   } catch (err) {
