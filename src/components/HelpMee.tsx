@@ -44,8 +44,14 @@ export default function HelpMee() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
               </svg>
             </Link>
+            <Link
+              href="/bijdragen"
+              className="flex items-center justify-center gap-2 py-3 text-sm font-medium border border-green-300 text-green-700 rounded-full hover:bg-green-50 transition-colors"
+            >
+              💜 Losse bijdrage geven
+            </Link>
             <p className="text-green-700/50 text-sm text-center lg:text-left">
-              Wassen, bakken, spullen meenemen of sponsoren — alles is welkom.
+              Wassen, bakken, spullen meenemen, sponsoren of een losse bijdrage — alles is welkom.
             </p>
           </div>
         </div>

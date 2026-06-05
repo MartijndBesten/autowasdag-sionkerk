@@ -512,3 +512,67 @@ export async function sendSponsorEmail(data: {
 
   return send(`Nieuwe sponsorbijdrage — ${data.contact_name}`, html);
 }
+
+// ── Losse bijdrage: organisatiemail ──────────────────────────────────────────
+
+export async function sendDonationNotification(data: {
+  name: string;
+  email: string;
+  phone: string | null;
+  amount: string;
+  notes: string | null;
+}): Promise<SendResult> {
+  const html = buildHtml({
+    typeLabel:   "Nieuwe losse bijdrage",
+    subLabel:    "Organisatie-notificatie",
+    accentColor: "#7c3aed",
+    rows: [
+      ["Naam",           data.name],
+      ["E-mail",         data.email],
+      ["Telefoon",       data.phone],
+      ["Bedrag",         data.amount],
+      ["Persoonlijk bericht", data.notes],
+      ["Ingediend op",   now()],
+    ],
+    timestamp: now(),
+  });
+
+  return send(`Nieuwe bijdrage — ${data.name} (${data.amount})`, html);
+}
+
+// ── Losse bijdrage: bevestigingsmail naar donateur ───────────────────────────
+
+export async function sendDonationConfirmation(data: {
+  name: string;
+  email: string;
+  amount: string;
+}): Promise<SendResult> {
+  const html = buildHtml({
+    typeLabel:   "Bedankt voor uw bijdrage",
+    accentColor: "#7c3aed",
+    rows: [
+      ["Naam",    data.name],
+      ["Bedrag",  data.amount],
+      ["Betaling","U kunt uw bijdrage op de dag zelf voldoen — contant of via QR-code."],
+      ["Doel",    "De opbrengst is bestemd voor het opknappen van de zalen van de kerk."],
+    ],
+    timestamp: now(),
+    footer: "Wij zijn blij met uw steun voor de Autowasdag van de Sionkerk Houten. Tot ziens op zaterdag 11 juli!",
+  });
+
+  const resend = getResend();
+  if (!resend) return { ok: true };
+
+  const { error } = await resend.emails.send({
+    from:    FROM,
+    to:      data.email,
+    subject: `Bedankt voor uw bijdrage aan de Autowasdag — ${data.amount}`,
+    html,
+  });
+
+  if (error) {
+    console.error("[email] Donatie bevestiging mislukt:", error);
+    return { ok: false, error: error.message };
+  }
+  return { ok: true };
+}

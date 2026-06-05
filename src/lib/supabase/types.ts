@@ -4,7 +4,8 @@ export type PackageType   = "buiten_wassen" | "compleet";
 export type ReservationStatus = "pending" | "confirmed" | "completed" | "cancelled";
 export type PaymentStatus = "unpaid" | "paid_cash" | "paid_qr" | "donated_extra";
 export type VolunteerStatus  = "pending" | "confirmed" | "cancelled";
-export type ContributionType = "bakken" | "sponsoring" | "spullen" | "eten_verkopen" | "overig";
+export type ContributionType   = "bakken" | "sponsoring" | "spullen" | "eten_verkopen" | "donatie" | "overig";
+export type DonationStatus    = "pending" | "paid_cash" | "paid_qr" | "cancelled";
 export type AvailabilityType = "full_day" | "morning" | "afternoon";
 export type PlanningStatus   = "new" | "review" | "planned" | "assignment_sent" | "confirmed" | "cancelled" | "reserve" | "not_needed";
 export type FinalShift       = "not_chosen" | "morning" | "afternoon" | "full_day" | "specific";
@@ -72,7 +73,7 @@ export interface ContributionSignup {
   sponsorship_type: string | null;
   notes: string | null;
   admin_notes: string | null;
-  status: VolunteerStatus;
+  status: string;
 }
 
 export interface EventSettings {

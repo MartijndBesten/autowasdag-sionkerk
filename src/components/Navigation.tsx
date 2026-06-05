@@ -5,11 +5,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const navLinks = [
-  { label: "Home",      href: "/#home" },
-  { label: "Op de dag", href: "/#op-de-dag" },
-  { label: "Pakketten", href: "/#pakketten" },
-  { label: "Help mee",  href: "/help-mee" },
-  { label: "Praktisch", href: "/#praktisch" },
+  { label: "Home",       href: "/#home" },
+  { label: "Op de dag",  href: "/#op-de-dag" },
+  { label: "Pakketten",  href: "/#pakketten" },
+  { label: "Help mee",   href: "/help-mee" },
+  { label: "Bijdragen",  href: "/bijdragen" },
+  { label: "Praktisch",  href: "/#praktisch" },
 ];
 
 export default function Navigation() {
