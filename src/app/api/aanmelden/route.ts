@@ -124,7 +124,7 @@ export async function POST(req: NextRequest) {
       console.log("[aanmelden] bevestigingsmail verstuurd");
     } catch (e) { console.error("[aanmelden] bevestigingsmail fout:", e); }
 
-    // Logging (niet-kritiek — eigen try-catch zodat het nooit een 500 veroorzaakt)
+    // Logging (niet-kritiek — altijd veilig afgevangen)
     try {
       await supabase.from("email_logs").insert({
         to_address:     process.env.NOTIFY_EMAIL ?? "",
@@ -134,7 +134,7 @@ export async function POST(req: NextRequest) {
         reference_type: "volunteer_signup",
         status:         "sent",
       });
-    } catch { /* silenced */ }
+    } catch (_e) { console.warn("[aanmelden] email_logs insert overgeslagen:", (_e as Error)?.message); }
 
     try {
       await supabase.from("audit_logs").insert({
@@ -143,7 +143,7 @@ export async function POST(req: NextRequest) {
         record_id:  record?.id,
         new_data:   { full_name: name, email: normalizedEmail, selected_tasks: taskList },
       });
-    } catch { /* silenced */ }
+    } catch (_e) { console.warn("[aanmelden] audit_logs insert overgeslagen:", (_e as Error)?.message); }
 
     console.log("[aanmelden] success response verzonden");
     return NextResponse.json({ ok: true }, { status: 200 });

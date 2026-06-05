@@ -152,7 +152,7 @@ export async function POST(req: NextRequest) {
         reference_type: "car_reservation",
         status:         "sent",
       });
-    } catch { /* silenced */ }
+    } catch (_e) { console.warn("[reserveren] email_logs insert overgeslagen:", (_e as Error)?.message); }
 
     try {
       await supabase.from("audit_logs").insert({
@@ -161,13 +161,13 @@ export async function POST(req: NextRequest) {
         record_id:  reservation?.id,
         new_data:   { full_name, email, package_type, reservation_date, reservation_time },
       });
-    } catch { /* silenced */ }
+    } catch (_e) { console.warn("[reserveren] audit_logs insert overgeslagen:", (_e as Error)?.message); }
 
     console.log("[reserveren] success response verzonden");
     return NextResponse.json({ ok: true, id: reservation?.id }, { status: 200 });
 
   } catch (err) {
-    console.error("[api/reserveren] FOUT:", err);
+    console.error("[api/reserveren] FOUT op stap na DB-insert:", err);
     return NextResponse.json({ error: "Interne fout bij verwerking." }, { status: 500 });
   }
 }
