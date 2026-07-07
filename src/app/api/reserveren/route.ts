@@ -29,6 +29,13 @@ export async function POST(req: NextRequest) {
     if (!VALID_PACKAGES.includes(package_type)) {
       return NextResponse.json({ error: "Ongeldig pakket." }, { status: 400 });
     }
+    // Compleet pakket is volgeboekt — alleen buiten wassen is nog beschikbaar
+    if (package_type === "compleet") {
+      return NextResponse.json(
+        { error: "Het Compleet-pakket is helaas volgeboekt. U kunt nog wel een buitenwasbeurt reserveren." },
+        { status: 409 }
+      );
+    }
 
     const supabase = createAdminClient() as any;
 

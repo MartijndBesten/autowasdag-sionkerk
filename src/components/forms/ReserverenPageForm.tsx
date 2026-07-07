@@ -15,9 +15,9 @@ export default function ReserverenPageForm({
   durationBuitenWassen?: number;
   durationCompleet?: number;
 }) {
-  const PACKAGE_OPTIONS: { value: PackageType; label: string; duration: string; price: string }[] = [
+  const PACKAGE_OPTIONS: { value: PackageType; label: string; duration: string; price: string; soldOut?: boolean }[] = [
     { value: "buiten_wassen", label: "Buitenkant wassen",          duration: `± ${durationBuitenWassen} min`, price: "€10,00" },
-    { value: "compleet",      label: "Compleet (buiten + binnen)", duration: `± ${durationCompleet} min`,     price: "€15,00" },
+    { value: "compleet",      label: "Compleet (buiten + binnen)", duration: `± ${durationCompleet} min`,     price: "€15,00", soldOut: true },
   ];
   const searchParams = useSearchParams();
   const router       = useRouter();
@@ -27,7 +27,7 @@ export default function ReserverenPageForm({
     email:            "",
     phone:            "",
     license_plate:    "",
-    package_type:     (searchParams.get("pakket") as PackageType) ?? "compleet",
+    package_type:     (searchParams.get("pakket") as PackageType) ?? "buiten_wassen",
     reservation_date: eventDate,
     reservation_time: "",
     extra_donation:   "",
@@ -118,14 +118,25 @@ export default function ReserverenPageForm({
         <label className={lbl}>Pakket <span className="text-red-400">*</span></label>
         <div className="space-y-2">
           {PACKAGE_OPTIONS.map(p => (
-            <label key={p.value} className={`flex items-center justify-between gap-3 cursor-pointer rounded-xl border-2 px-4 py-3 transition-colors ${form.package_type === p.value ? "border-green-700 bg-green-50" : "border-stone-200 hover:border-green-300"}`}>
+            <label key={p.value}
+              className={`flex items-center justify-between gap-3 rounded-xl border-2 px-4 py-3 transition-colors
+                ${p.soldOut
+                  ? "cursor-not-allowed border-stone-200 bg-stone-50 opacity-60"
+                  : `cursor-pointer ${form.package_type === p.value ? "border-green-700 bg-green-50" : "border-stone-200 hover:border-green-300"}`
+                }`}>
               <div className="flex items-center gap-3">
-                <div className={`w-4 h-4 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${form.package_type === p.value ? "border-green-700" : "border-stone-300"}`}>
-                  {form.package_type === p.value && <div className="w-2 h-2 rounded-full bg-green-700" />}
+                <div className={`w-4 h-4 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${!p.soldOut && form.package_type === p.value ? "border-green-700" : "border-stone-300"}`}>
+                  {!p.soldOut && form.package_type === p.value && <div className="w-2 h-2 rounded-full bg-green-700" />}
                 </div>
-                <input type="radio" name="package" value={p.value} checked={form.package_type === p.value}
-                  onChange={() => set("package_type", p.value)} className="sr-only" />
-                <span className={`text-sm font-medium ${form.package_type === p.value ? "text-green-800" : "text-gray-600"}`}>{p.label}</span>
+                <input type="radio" name="package" value={p.value}
+                  checked={!p.soldOut && form.package_type === p.value}
+                  onChange={() => { if (!p.soldOut) set("package_type", p.value); }}
+                  disabled={p.soldOut}
+                  className="sr-only" />
+                <div>
+                  <span className={`text-sm font-medium ${!p.soldOut && form.package_type === p.value ? "text-green-800" : "text-gray-600"}`}>{p.label}</span>
+                  {p.soldOut && <span className="ml-2 text-xs font-semibold text-red-500">Volgeboekt</span>}
+                </div>
               </div>
               <span className="text-xs text-gray-400 flex-shrink-0">{p.price} · {p.duration}</span>
             </label>
