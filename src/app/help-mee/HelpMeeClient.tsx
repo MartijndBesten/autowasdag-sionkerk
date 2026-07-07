@@ -8,9 +8,9 @@ const categories = [
     group: "Op de dag helpen",
     options: [
       { id: "wassen",     emoji: "🚿", title: "Auto's wassen",       desc: "Emmer en spons — de kern van de dag.",                    colors: { idle: "bg-green-50 border-green-200",   active: "bg-green-700 border-green-700 text-white"  } },
-      { id: "koffie",     emoji: "☕", title: "Koffie schenken",      desc: "Zorgen dat er altijd een bakje klaarstaat.",               colors: { idle: "bg-amber-50 border-amber-200",   active: "bg-amber-500 border-amber-500 text-white"  } },
-      { id: "friet",      emoji: "🍟", title: "Friet & snacks",       desc: "Bakken en uitserveren in de middag.",                     colors: { idle: "bg-orange-50 border-orange-200", active: "bg-orange-500 border-orange-500 text-white" } },
-      { id: "kinderhoek", emoji: "🎈", title: "Kinderhoek",           desc: "Spelletjes en aandacht voor de kleintjes.",               colors: { idle: "bg-sky-50 border-sky-200",       active: "bg-sky-500 border-sky-500 text-white"      } },
+      { id: "koffie",     emoji: "☕", title: "Koffie schenken",      desc: "Zorgen dat er altijd een bakje klaarstaat.",               colors: { idle: "bg-amber-50 border-amber-200",   active: "bg-amber-500 border-amber-500 text-white"  }, soldOut: true },
+      { id: "friet",      emoji: "🍟", title: "Friet & snacks",       desc: "Bakken en uitserveren in de middag.",                     colors: { idle: "bg-orange-50 border-orange-200", active: "bg-orange-500 border-orange-500 text-white" }, soldOut: true },
+      { id: "kinderhoek", emoji: "🎈", title: "Kinderhoek",           desc: "Spelletjes en aandacht voor de kleintjes.",               colors: { idle: "bg-sky-50 border-sky-200",       active: "bg-sky-500 border-sky-500 text-white"      }, soldOut: true },
       { id: "opbouwen",   emoji: "🔧", title: "Op- en afbouwen",      desc: "Vroeg aanwezig om alles klaar te zetten.",                 colors: { idle: "bg-purple-50 border-purple-200", active: "bg-purple-600 border-purple-600 text-white" } },
     ],
   },
@@ -247,12 +247,21 @@ export default function HelpMeeClient({ dateFormatted, suppliesOptions }: { date
             <p className="text-xs font-semibold text-green-600 uppercase tracking-wider mb-3">{cat.group}</p>
             <div className="grid grid-cols-2 gap-2.5">
               {cat.options.map(opt => {
-                const active = selected.includes(opt.id);
+                const active  = selected.includes(opt.id);
+                const blocked = (opt as { soldOut?: boolean }).soldOut === true;
                 return (
-                  <button key={opt.id} type="button" onClick={() => toggle(opt.id)}
-                    className={`relative text-left rounded-2xl border-2 p-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-600 ${active ? opt.colors.active : opt.colors.idle}`}
+                  <button key={opt.id} type="button"
+                    onClick={() => { if (!blocked) toggle(opt.id); }}
+                    disabled={blocked}
+                    className={`relative text-left rounded-2xl border-2 p-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-600
+                      ${blocked
+                        ? "cursor-not-allowed opacity-50 border-stone-200 bg-stone-50"
+                        : active ? opt.colors.active : opt.colors.idle}`}
                   >
-                    {active && (
+                    {blocked && (
+                      <span className="absolute top-2 right-2 text-[10px] font-bold text-stone-400 uppercase tracking-wider">Vol</span>
+                    )}
+                    {active && !blocked && (
                       <span className="absolute top-2.5 right-2.5 w-5 h-5 rounded-full bg-white/25 flex items-center justify-center">
                         <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
@@ -260,8 +269,8 @@ export default function HelpMeeClient({ dateFormatted, suppliesOptions }: { date
                       </span>
                     )}
                     <div className="text-xl mb-2 leading-none">{opt.emoji}</div>
-                    <p className={`font-semibold text-sm leading-snug ${active ? "text-white" : "text-green-950"}`}>{opt.title}</p>
-                    <p className={`text-xs leading-relaxed mt-1 ${active ? "text-white/70" : "text-gray-400"}`}>{opt.desc}</p>
+                    <p className={`font-semibold text-sm leading-snug ${active && !blocked ? "text-white" : "text-green-950"}`}>{opt.title}</p>
+                    <p className={`text-xs leading-relaxed mt-1 ${active && !blocked ? "text-white/70" : "text-gray-400"}`}>{opt.desc}</p>
                   </button>
                 );
               })}

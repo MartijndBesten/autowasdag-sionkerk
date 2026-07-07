@@ -50,6 +50,16 @@ export async function POST(req: NextRequest) {
     const taskList: string[] = Array.isArray(tasks) ? tasks : [];
     const details: string    = contribution_details ?? "";
 
+    // Taken die niet meer beschikbaar zijn voor nieuwe aanmeldingen
+    const BLOCKED_TASKS = ["koffie", "friet", "kinderhoek"];
+    const blockedFound = taskList.filter(t => BLOCKED_TASKS.includes(t));
+    if (blockedFound.length > 0) {
+      return NextResponse.json(
+        { error: "Een of meer gekozen taken zijn niet meer beschikbaar voor nieuwe aanmeldingen." },
+        { status: 409 }
+      );
+    }
+
     if (taskList.includes("bakken")) {
       const bakkenLine = details.split("\n").find(l => l.startsWith("Bakken:"));
       if (!bakkenLine || bakkenLine.replace("Bakken:", "").trim().length === 0) {
