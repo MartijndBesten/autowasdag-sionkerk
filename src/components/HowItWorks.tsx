@@ -1,10 +1,10 @@
 import type { Action, TimelineItem } from "@/lib/supabase/types";
 
 const DEFAULT_STEPS = [
-  { number: "01", title: "Reserveer online of kom langs", description: "Via de website reserveert u eenvoudig een tijdslot. Langskomen zonder reservering kan ook, zolang er plek is." },
-  { number: "02", title: "Kies uw wasbeurt", description: "Kies voor Buitenkant wassen (€10,00, alleen buitenkant) of Compleet (€15,00, buitenkant wassen + stofzuigen + eenvoudige interieurreiniging)." },
-  { number: "03", title: "Gratis koffie bij uw reservering", description: "Laat uw reservering zien en ontvang een gratis bakje koffie. Gebak en andere lekkernijen zijn verkrijgbaar tijdens de actiedag." },
-  { number: "04", title: "Samen steunen we de zalen", description: "De opbrengst gaat naar het opknappen van de zalen van de Sionkerk." },
+  { number: "01", title: "Reserveren via de website", description: "Bezoekers reserveerden online een tijdslot. Wie geen reservering had, kon ook gewoon langskomen zolang er plek was." },
+  { number: "02", title: "Kiezen uit twee pakketten", description: "Bezoekers kozen voor Buitenkant wassen (€10,00) of Compleet (€15,00, inclusief stofzuigen en interieurreiniging)." },
+  { number: "03", title: "Gratis koffie en gezelligheid", description: "Met een reservering was er een gratis bakje koffie. Er was gebak, friet, fruit en bloemen — een gezellige buurtdag." },
+  { number: "04", title: "Opbrengst voor de zalen", description: "De netto-opbrengst van € 2.250 gaat naar het opknappen van de zalen van de Sionkerk." },
 ];
 
 const DEFAULT_TIMELINE: TimelineItem[] = [
@@ -33,9 +33,9 @@ export default function HowItWorks({ action }: { action: Action | null }) {
     <section id="hoe-werkt-het" className="bg-white section-padding">
       <div className="container-max">
         <div className="max-w-lg mb-14">
-          <span className="label-small">Zo werkt het</span>
-          <h2 className="mt-3 text-3xl sm:text-4xl font-bold text-green-950">Hoe werkt het?</h2>
-          <p className="mt-4 text-gray-400 text-lg">Simpel, gezellig en voor een goed doel.</p>
+          <span className="label-small">Terugblik op de Autowasdag 2026</span>
+          <h2 className="mt-3 text-3xl sm:text-4xl font-bold text-green-950">Zo verliep de dag</h2>
+          <p className="mt-4 text-gray-400 text-lg">Een geslaagde dag, dankzij iedereen die meedeed.</p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-6">
@@ -56,7 +56,7 @@ export default function HowItWorks({ action }: { action: Action | null }) {
         <div className="mt-14 rounded-3xl overflow-hidden border border-gold-200/70"
              style={{ background: "linear-gradient(135deg, #faf6e8 0%, #fef9ec 100%)" }}>
           <div className="px-6 sm:px-10 pt-7 pb-2">
-            <p className="label-small">Tijdlijn op de dag</p>
+            <p className="label-small">Tijdlijn van de dag</p>
             <p className="mt-1 text-green-800/50 text-sm" dangerouslySetInnerHTML={{ __html: coffeeNote }} />
           </div>
 

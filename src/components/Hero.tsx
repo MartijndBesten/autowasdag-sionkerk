@@ -22,7 +22,7 @@ export default function Hero({ action }: { action: Action | null }) {
   const dateShort   = formatEventDateShort(eventDate);
   const title       = action?.hero_title       ?? DEFAULTS.hero_title;
   const subtitle    = action?.hero_subtitle    ?? DEFAULTS.hero_subtitle;
-  const description = action?.hero_description ?? DEFAULTS.hero_description;
+  const description = "Bedankt voor een geslaagde Autowasdag! Er zijn veel auto's gewassen en bezoekers en vrijwilligers hebben samen bijgedragen aan een mooie opbrengst. Hartelijk dank voor ieders deelname, hulp en betrokkenheid.";
   const imagePath   = action?.hero_image_path  ?? DEFAULTS.hero_image_path;
   const tagline     = action?.action_tagline   ?? DEFAULTS.action_tagline;
   const address     = action
@@ -81,11 +81,17 @@ export default function Hero({ action }: { action: Action | null }) {
               </p>
             </div>
 
-            <div className="mt-10 flex flex-wrap items-center gap-4">
-              <Link href="/reserveren" className="btn-primary">Reserveer uw wasbeurt</Link>
-              <a href="#help-mee" className="inline-flex items-center gap-2 border-2 border-green-700 text-green-700 px-6 py-3.5 rounded-full text-sm font-semibold hover:bg-green-700 hover:text-white transition-colors">
-                Help mee als vrijwilliger
-              </a>
+            <div className="mt-8 rounded-2xl bg-green-50 border border-green-100 px-6 py-5 max-w-lg">
+              <p className="text-green-700 font-semibold text-base mb-1">Netto-opbrengst: € 2.250</p>
+              <p className="text-green-800/60 text-sm leading-relaxed">
+                Dankzij alle bezoekers, vrijwilligers en sponsoren heeft de Autowasdag een netto-opbrengst van&nbsp;€&nbsp;2.250 opgeleverd.
+              </p>
+            </div>
+
+            <div className="mt-6 rounded-2xl bg-gold-100/60 border border-gold-200/60 px-6 py-4 max-w-lg">
+              <p className="text-green-800 text-sm leading-relaxed">
+                <strong>Mogelijk volgt in 2027 een nieuwe Autowasdag.</strong> Zodra de datum en verdere informatie bekend zijn, wordt deze website bijgewerkt.
+              </p>
             </div>
           </div>
 
@@ -107,7 +113,7 @@ export default function Hero({ action }: { action: Action | null }) {
                 <p className="text-green-700/50 text-[10px] mt-1.5">{startTime} – {endTime}</p>
               </div>
               <div className="rounded-2xl bg-green-800 p-3.5">
-                <p className="text-green-300 text-[10px] leading-relaxed font-medium">Reserveren<br />aanbevolen</p>
+                <p className="text-green-300 text-[10px] leading-relaxed font-medium">Geslaagde<br />dag 2026</p>
               </div>
             </div>
           </div>
@@ -115,8 +121,8 @@ export default function Hero({ action }: { action: Action | null }) {
 
         <div className="pb-8 flex items-center gap-4">
           <div className="h-px flex-1 bg-green-300/40" />
-          <a href="#hoe-werkt-het" className="flex items-center gap-1.5 text-green-500 text-xs font-medium hover:text-green-700 transition-colors">
-            Hoe werkt het?
+          <a href="#op-de-dag" className="flex items-center gap-1.5 text-green-500 text-xs font-medium hover:text-green-700 transition-colors">
+            Terugblik op de dag
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
           </a>
           <div className="h-px flex-1 bg-green-300/40" />

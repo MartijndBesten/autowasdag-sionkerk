@@ -22,8 +22,8 @@ export default function PracticalInfo({ action }: { action: Action | null }) {
     <section id="praktisch" className="bg-white section-padding">
       <div className="container-max">
         <div className="mb-12">
-          <span className="label-small">Praktische informatie</span>
-          <h2 className="mt-3 text-3xl sm:text-4xl font-bold text-green-950">Alles wat je moet weten</h2>
+          <span className="label-small">Terugblik – Autowasdag 2026</span>
+          <h2 className="mt-3 text-3xl sm:text-4xl font-bold text-green-950">Hoe het was georganiseerd</h2>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-start">
@@ -59,9 +59,9 @@ export default function PracticalInfo({ action }: { action: Action | null }) {
             </div>
 
             <div className="rounded-2xl bg-[#f8f6f1] px-6 py-5 border border-stone-100">
-              <p className="text-green-800 font-semibold text-base mb-1">Kom gerust langs</p>
+              <p className="text-green-800 font-semibold text-base mb-1">Mogelijk een nieuwe editie in 2027</p>
               <p className="text-gray-400 text-sm leading-relaxed">
-                Reserveren is handig, dan bent u zeker van een plek. Zonder reservering langskomen kan ook, zolang er nog ruimte is. Bij drukte kan het iets uitlopen.
+                Waarschijnlijk organiseren we in 2027 opnieuw een Autowasdag. Zodra de datum en verdere informatie bekend zijn, wordt deze website bijgewerkt.
               </p>
             </div>
           </div>

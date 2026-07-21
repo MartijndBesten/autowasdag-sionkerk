@@ -47,10 +47,10 @@ export default function CommunityDay({ action }: { action: Action | null }) {
       <div className="container-max">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-end mb-12">
           <div>
-            <span className="label-small">Op de dag zelf</span>
-            <h2 className="mt-3 text-3xl sm:text-4xl font-bold text-green-950">Er is meer dan een wasbeurt</h2>
+            <span className="label-small">Terugblik op de Autowasdag 2026</span>
+            <h2 className="mt-3 text-3xl sm:text-4xl font-bold text-green-950">Er was meer dan een wasbeurt</h2>
           </div>
-          <p className="text-gray-400 text-base max-w-sm lg:ml-auto">De Autowasdag is een gezellige communitydag. Neem de tijd — er is genoeg te doen en te eten.</p>
+          <p className="text-gray-400 text-base max-w-sm lg:ml-auto">De Autowasdag was een gezellige communitydag. Er was volop te doen en te eten voor jong en oud.</p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-5">

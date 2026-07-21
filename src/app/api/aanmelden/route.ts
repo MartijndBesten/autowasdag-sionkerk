@@ -7,6 +7,12 @@ const VALID_AVAIL: AvailabilityType[] = ["full_day", "morning", "afternoon"];
 const VALID_COST = ["eigen_kosten", "vergoeding_gewenst", "gesponsord", "weet_ik_nog_niet"];
 
 export async function POST(req: NextRequest) {
+  // De Autowasdag 2026 is afgelopen — nieuwe aanmeldingen zijn gesloten.
+  return NextResponse.json(
+    { error: "Aanmelden is gesloten. De Autowasdag 2026 is afgelopen. Houd deze website in de gaten voor informatie over een eventuele editie in 2027." },
+    { status: 403 }
+  );
+
   try {
     const body = await req.json();
     const { name, email, phone, availability, tasks, contribution_details, cost_preference, notes, selected_supplies } = body;
@@ -61,7 +67,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (taskList.includes("bakken")) {
-      const bakkenLine = details.split("\n").find(l => l.startsWith("Bakken:"));
+      const bakkenLine = details.split("\n").find(l => l.startsWith("Bakken:")) ?? "";
       if (!bakkenLine || bakkenLine.replace("Bakken:", "").trim().length === 0) {
         return NextResponse.json({ error: "Geef aan wat je gaat bakken." }, { status: 400 });
       }
@@ -81,7 +87,7 @@ export async function POST(req: NextRequest) {
       }
     }
     if (taskList.includes("sponsoring")) {
-      const sponsoringLine = details.split("\n").find(l => l.startsWith("Sponsoring:"));
+      const sponsoringLine = details.split("\n").find(l => l.startsWith("Sponsoring:")) ?? "";
       if (!sponsoringLine || sponsoringLine.replace("Sponsoring:", "").trim().length === 0) {
         return NextResponse.json({ error: "Geef aan hoe je wilt bijdragen als sponsor/verkoper." }, { status: 400 });
       }

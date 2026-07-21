@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import type { Action } from "@/lib/supabase/types";
 
 const DEFAULT_PACKAGES = [
@@ -48,10 +47,10 @@ export default function Packages({ action }: { action: Action | null }) {
       <div className="container-max">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-end mb-12">
           <div>
-            <span className="label-small">Wat mag het kosten?</span>
-            <h2 className="mt-3 text-3xl sm:text-4xl font-bold text-green-950">Kies uw wasbeurt</h2>
+            <span className="label-small">Pakketten Autowasdag 2026</span>
+            <h2 className="mt-3 text-3xl sm:text-4xl font-bold text-green-950">Dit waren de pakketten</h2>
           </div>
-          <p className="text-gray-400 text-base lg:text-right max-w-sm lg:max-w-none ml-auto">De opbrengst gaat naar het opknappen van de zalen van de Sionkerk.</p>
+          <p className="text-gray-400 text-base lg:text-right max-w-sm lg:max-w-none ml-auto">De opbrengst is naar het opknappen van de zalen van de Sionkerk gegaan.</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6 max-w-2xl mx-auto lg:max-w-none">
@@ -84,22 +83,18 @@ export default function Packages({ action }: { action: Action | null }) {
                     </li>
                   ))}
                 </ul>
-                <Link href={`/reserveren?pakket=${pkg.id}`} className={`w-full py-3 rounded-full text-sm font-semibold text-center transition-colors ${s.btn}`}>
-                  Reserveer nu
-                </Link>
+                <div className={`w-full py-3 rounded-full text-sm font-semibold text-center opacity-40 cursor-default ${s.btn}`}>
+                  Reserveren gesloten
+                </div>
               </div>
             );
           })}
         </div>
 
-        <div className="mt-8 space-y-3">
-          <div className="flex items-start gap-3 px-5 py-4 rounded-xl bg-amber-50/70 border border-amber-100">
-            <span className="text-lg flex-shrink-0">☕</span>
-            <p className="text-green-800 text-sm">{coffeeNote}</p>
-          </div>
+        <div className="mt-8">
           <div className="flex items-start gap-3 px-5 py-4 rounded-xl bg-gold-100/60 border border-gold-200/60">
             <svg className="w-4 h-4 text-green-700 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-            <p className="text-green-800 text-sm"><strong>Reserveren is handig</strong>, dan bent u zeker van een plek. Gewoon langskomen kan ook — zolang er nog ruimte is.</p>
+            <p className="text-green-800 text-sm">Dit zijn de prijzen van de Autowasdag 2026. Reserveren voor deze editie is gesloten. Wanneer er in 2027 een nieuwe Autowasdag plaatsvindt, worden de details op deze website gepubliceerd.</p>
           </div>
         </div>
       </div>

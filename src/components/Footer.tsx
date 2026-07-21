@@ -1,4 +1,3 @@
-import Link from "next/link";
 import type { Action } from "@/lib/supabase/types";
 import { formatEventDate } from "@/lib/event";
 
@@ -48,7 +47,7 @@ export default function Footer({ action }: { action: Action | null }) {
 
             <div className="grid grid-cols-2 gap-x-8 gap-y-10 lg:pt-12">
               <div>
-                <p className="text-white font-semibold text-sm mb-4">Wasbeurten</p>
+                <p className="text-white font-semibold text-sm mb-4">Pakketten 2026</p>
                 <ul className="space-y-2.5">
                   {[`Buitenkant wassen — €${bw}`, `Compleet — €${cmp}`].map(t => (
                     <li key={t}><a href="#pakketten" className="text-green-400/60 text-sm hover:text-green-300 transition-colors">{t}</a></li>
@@ -56,12 +55,11 @@ export default function Footer({ action }: { action: Action | null }) {
                 </ul>
               </div>
               <div>
-                <p className="text-white font-semibold text-sm mb-4">Evenement</p>
+                <p className="text-white font-semibold text-sm mb-4">Evenement 2026</p>
                 <ul className="space-y-2.5 text-green-400/60 text-sm">
                   {dateFormatted && <li>{dateFormatted}</li>}
                   <li>{(action?.start_time ?? "09:00").slice(0,5)} – {(action?.end_time ?? "16:00").slice(0,5)} uur</li>
-                  <li>Reservering aanbevolen</li>
-                  <li>Contant of via Tikkie</li>
+                  <li>Netto-opbrengst: € 2.250</li>
                 </ul>
               </div>
               <div>
@@ -69,7 +67,6 @@ export default function Footer({ action }: { action: Action | null }) {
                 <ul className="space-y-2.5">
                   <li><a href={website} className="text-green-400/60 text-sm hover:text-green-300 transition-colors">hervormdhouten.nl</a></li>
                   <li><a href="#over-ons" className="text-green-400/60 text-sm hover:text-green-300 transition-colors">Over ons</a></li>
-                  <li><Link href="/reserveren" className="text-green-400/60 text-sm hover:text-green-300 transition-colors">Reserveren</Link></li>
                 </ul>
               </div>
               <div>

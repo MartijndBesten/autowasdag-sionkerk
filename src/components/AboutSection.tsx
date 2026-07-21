@@ -66,7 +66,8 @@ export default function AboutSection() {
               ))}
             </div>
 
-            <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+            <p className="label-small text-green-500 mt-8 mb-3">Terugblik op de Autowasdag 2026</p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
               {[1, 2, 3, 4, 5].map((i) => (
                 <div key={i} className="aspect-square rounded-xl bg-green-900/50 border border-green-800/30" />
               ))}

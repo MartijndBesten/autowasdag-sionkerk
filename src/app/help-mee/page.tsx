@@ -34,11 +34,10 @@ export default async function HelpMeePage() {
   const eventDate     = await getEventDate();
   const dateFormatted = formatEventDate(eventDate);
 
-  const supabase = createAdminClient() as any;
-
   let suppliesOptions: SupplyOption[] = DEFAULT_SUPPLIES;
   let volunteersOpen = true;
   try {
+    const supabase = createAdminClient() as any;
     const [supRes, eventRes] = await Promise.all([
       supabase.from("settings").select("value").eq("key", "volunteer_supplies").single(),
       supabase.from("settings").select("value").eq("key", "event").single(),

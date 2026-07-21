@@ -10,6 +10,12 @@ const TYPE_MAP: Record<string, ContributionType> = {
 };
 
 export async function POST(req: NextRequest) {
+  // De Autowasdag 2026 is afgelopen — nieuwe bijdragen zijn gesloten.
+  return NextResponse.json(
+    { error: "Bijdragen is gesloten. De Autowasdag 2026 is afgelopen. Houd deze website in de gaten voor informatie over een eventuele editie in 2027." },
+    { status: 403 }
+  );
+
   try {
     const body = await req.json();
     const { type, name, email, phone, notes, ...rest } = body;

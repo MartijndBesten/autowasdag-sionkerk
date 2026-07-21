@@ -12,8 +12,8 @@ const jakarta = Plus_Jakarta_Sans({
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "https://autowasdagsionkerk.nl";
 
-const TITLE       = "Autowasdag Sionkerk Houten – 11 juli 2026";
-const DESCRIPTION = "Laat uw auto wassen door de jongeren van de Sionkerk. Zaterdag 11 juli 2026 van 09:00 tot 16:00 uur. Kies voor Buitenwas of Compleet en steun de opknapbeurt van de kerkzalen.";
+const TITLE       = "Autowasdag Sionkerk Houten – Bedankt voor 2026";
+const DESCRIPTION = "De Autowasdag 2026 van de Sionkerk in Houten was een geslaagde dag. Bedankt aan alle bezoekers, vrijwilligers en sponsoren. Mogelijk volgt in 2027 een nieuwe editie.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
   description: DESCRIPTION,
   keywords: [
     "autowasdag", "Sionkerk", "Houten", "auto wassen",
-    "jongeren", "11 juli 2026", "Eikenhout 221",
+    "jongeren", "2026", "terugblik", "Eikenhout 221",
   ],
   authors: [{ name: "Sionkerk Houten" }],
   openGraph: {
@@ -39,7 +39,7 @@ export const metadata: Metadata = {
         url:    "/images/hero.jpg",
         width:  1200,
         height: 630,
-        alt:    "Autowasdag Sionkerk Houten – 11 juli 2026",
+        alt:    "Autowasdag Sionkerk Houten – Terugblik 2026",
       },
     ],
   },

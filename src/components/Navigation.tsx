@@ -1,16 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const navLinks = [
   { label: "Home",       href: "/#home" },
-  { label: "Op de dag",  href: "/#op-de-dag" },
+  { label: "Terugblik",  href: "/#op-de-dag" },
   { label: "Pakketten",  href: "/#pakketten" },
-  { label: "Help mee",   href: "/help-mee" },
-  { label: "Bijdragen",  href: "/bijdragen" },
-  { label: "Praktisch",  href: "/#praktisch" },
+  { label: "Over ons",   href: "/#over-ons" },
+  { label: "Contact",    href: "/#contact" },
 ];
 
 export default function Navigation() {
@@ -37,7 +35,7 @@ export default function Navigation() {
         <div className="flex items-center justify-between h-16 sm:h-18">
 
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2.5 group flex-shrink-0">
+          <a href="/" className="flex items-center gap-2.5 group flex-shrink-0">
             <div className="w-8 h-8 rounded-full bg-green-800 flex items-center justify-center">
               <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 2C8 2 5 5.5 5 9.5c0 5 7 12.5 7 12.5s7-7.5 7-12.5C19 5.5 16 2 12 2z" />
@@ -51,7 +49,7 @@ export default function Navigation() {
                 Sionkerk Houten
               </span>
             </div>
-          </Link>
+          </a>
 
           {/* Desktop nav */}
           <div className="hidden lg:flex items-center gap-0.5">
@@ -72,15 +70,8 @@ export default function Navigation() {
             })}
           </div>
 
-          {/* CTA + hamburger */}
+          {/* hamburger */}
           <div className="flex items-center gap-2">
-            <Link
-              href="/reserveren"
-              className="hidden sm:inline-flex items-center gap-1.5 bg-green-800 text-white text-sm font-semibold px-5 py-2.5 rounded-full hover:bg-green-900 transition-colors shadow-sm"
-            >
-              Reserveren
-            </Link>
-
             <button
               onClick={() => setMenuOpen(!menuOpen)}
               className="lg:hidden p-2 rounded-lg text-green-800 hover:bg-green-50 transition-colors"
@@ -112,15 +103,6 @@ export default function Navigation() {
                 {link.label}
               </a>
             ))}
-            <div className="px-4 pt-3">
-              <Link
-                href="/reserveren"
-                onClick={() => setMenuOpen(false)}
-                className="block w-full text-center bg-green-800 text-white px-5 py-3 rounded-full text-sm font-semibold hover:bg-green-900 transition-colors"
-              >
-                Reserveren
-              </Link>
-            </div>
           </div>
         )}
       </nav>

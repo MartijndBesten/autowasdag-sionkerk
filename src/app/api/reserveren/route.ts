@@ -14,6 +14,12 @@ function addMinutes(time: string, minutes: number): string {
 }
 
 export async function POST(req: NextRequest) {
+  // De Autowasdag 2026 is afgelopen — nieuwe reserveringen zijn gesloten.
+  return NextResponse.json(
+    { error: "Reserveren is gesloten. De Autowasdag 2026 is afgelopen. Houd deze website in de gaten voor informatie over een eventuele editie in 2027." },
+    { status: 403 }
+  );
+
   try {
     const body = await req.json();
     const {
@@ -29,7 +35,6 @@ export async function POST(req: NextRequest) {
     if (!VALID_PACKAGES.includes(package_type)) {
       return NextResponse.json({ error: "Ongeldig pakket." }, { status: 400 });
     }
-    // Compleet pakket is volgeboekt — alleen buiten wassen is nog beschikbaar
     if (package_type === "compleet") {
       return NextResponse.json(
         { error: "Het Compleet-pakket is helaas volgeboekt. U kunt nog wel een buitenwasbeurt reserveren." },
